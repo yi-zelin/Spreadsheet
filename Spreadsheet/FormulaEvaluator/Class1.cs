@@ -3,6 +3,12 @@ using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
+/**
+ * @ author:      Zelin Yi
+ * @ github id:   yi-zelin 
+ * @ UID:         u1442451
+ * @ Date:        Sep. 3. 2023
+ */
 namespace FormulaEvaluator
 {
     public static class Evaluator
@@ -60,8 +66,6 @@ namespace FormulaEvaluator
             }
             throw new ArgumentException("unexpectied issue occur in Calculate method with num1 = "+num1+" num2 = "+num2+" opr = "+opr);
         }
-
-
 
 
 
@@ -145,25 +149,19 @@ namespace FormulaEvaluator
                 }
             }
 
+            // two cases when last token has been processed
+            // Operator stack is empty
+            if (values.Count == 1 && operators.Count == 0) { return values.Pop(); }
 
-            Console.WriteLine(values.Count());
-            Console.WriteLine(operators.Count());
-            Console.WriteLine(values.Pop());
-            Console.WriteLine("!!!!");
-
-            // test
-            /*foreach (var item in values)
+            // Operator stack is not empty
+            else if (values.Count == 2 && operators.Count == 1)
             {
-                Console.WriteLine(item);
+                int intItem = values.Pop();
+                return Calculate(values.Pop(),operators.Pop(), intItem);
             }
-            Console.WriteLine("!!!!!");
-            foreach (var item in operators)
-            {
-                Console.WriteLine(item);
-            }*/
 
-            // return values.Pop();
-            return 1;
+            // unknow cases, bug if appear
+            else { throw new ArgumentException("an unexpected exception occur in result stack"); }
         }
     }
 }

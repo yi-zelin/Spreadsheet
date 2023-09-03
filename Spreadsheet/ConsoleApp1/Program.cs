@@ -21,7 +21,7 @@ namespace ConsoleApp1
             FormulaEvaluator.Evaluator.Lookup a = One;
             try
             {
-                Evaluator.Evaluate("1+1*2", a);
+                Console.WriteLine(Evaluator.Evaluate("1+1*2+1+1*2", a));
             } catch (Exception e)
             {
                 Console.WriteLine(e.Message);
