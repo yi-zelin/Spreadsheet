@@ -21,6 +21,7 @@ namespace FormulaEvaluator
          */
         private static bool IsIntNum(String s)
         {
+            s = s.Trim();
             return s.All(char.IsDigit);
         }
 
@@ -71,7 +72,9 @@ namespace FormulaEvaluator
 
         public static int Evaluate(String exp, Lookup variableEvaluator) //, Lookup variableEvaluator
         {
-            string[] substrings = Regex.Split(exp.Trim(), "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
+            //string[] substrings = Regex.Split(Regex.Replace(exp, @"\s+", ""), "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
+            string[] substrings = Regex.Split(exp, "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
+            //foreach(var )
 
             Stack<int> values = new Stack<int>();
             Stack<String> operators = new Stack<String>();
@@ -79,7 +82,7 @@ namespace FormulaEvaluator
             foreach (String item in substrings)
             {
                 // meet empty or null item, continue
-                if (String.IsNullOrEmpty(item))
+                if (String.IsNullOrWhiteSpace(item))
                 {
                     continue;
                 }
@@ -89,7 +92,8 @@ namespace FormulaEvaluator
                 {
                     int intItem;
                     if (IsVar(item)) { intItem = variableEvaluator(item); } 
-                    else { intItem = int.Parse(item); }
+                    else { 
+                        intItem = int.Parse(item); }
 
                     // operator stack is not empty and '*' or '/' is at the top of the operator stack
                     if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
@@ -130,7 +134,6 @@ namespace FormulaEvaluator
                         if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
                         int intItem = values.Pop();
                         values.Push(Calculate(values.Pop(), operators.Pop(), intItem));
-
                     }
                     if (operators.Pop() != "(") { throw new ArgumentException("'(' isn't found where expected"); }
                     if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
@@ -145,7 +148,7 @@ namespace FormulaEvaluator
                 // for an invalid input, throw exception
                 else
                 {
-                    throw new ArgumentException(item + " is not a valid inpumt");
+                    throw new ArgumentException(item + " is not a valid input");
                 }
             }
 

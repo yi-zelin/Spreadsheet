@@ -17,11 +17,12 @@ namespace ConsoleApp1
             }
             Console.WriteLine(Evaluator.IsVar("A2"));*/
 
+            //Console.WriteLine(int.Parse("  3   "));
 
             FormulaEvaluator.Evaluator.Lookup a = One;
             try
             {
-                Console.WriteLine(Evaluator.Evaluate("1+1*2+1+1*2", a));
+                Console.WriteLine(Evaluator.Evaluate(" 1 + + 3", a));
             } catch (Exception e)
             {
                 Console.WriteLine(e.Message);
