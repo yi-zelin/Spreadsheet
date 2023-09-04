@@ -22,7 +22,12 @@ namespace ConsoleApp1
             FormulaEvaluator.Evaluator.Lookup a = One;
             try
             {
-                Console.WriteLine(Evaluator.Evaluate(" 1 + + 3", a));
+                Console.WriteLine(Evaluator.Evaluate("s1*(3-2)+1", a));
+                Console.WriteLine(Evaluator.Evaluate("4*(3-2)+1", a));
+                Console.WriteLine(Evaluator.Evaluate("2+4*(3-2)+1", a));
+                Console.WriteLine(Evaluator.Evaluate("4*(3-2)+1", a));
+                Console.WriteLine(Evaluator.Evaluate("4*(3-2)+1*s1", a));
+                Console.WriteLine(Evaluator.Evaluate("4*(3-2)*3+1/s1", a));
             } catch (Exception e)
             {
                 Console.WriteLine(e.Message);
