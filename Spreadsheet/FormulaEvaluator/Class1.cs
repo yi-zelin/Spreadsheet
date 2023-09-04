@@ -74,7 +74,10 @@ namespace FormulaEvaluator
         {
             //string[] substrings = Regex.Split(Regex.Replace(exp, @"\s+", ""), "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
             string[] substrings = Regex.Split(exp, "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
-            //foreach(var )
+            foreach (var v in substrings)
+            {
+                Console.WriteLine(v);
+            }
 
             Stack<int> values = new Stack<int>();
             Stack<String> operators = new Stack<String>();
@@ -82,7 +85,7 @@ namespace FormulaEvaluator
             foreach (String item in substrings)
             {
                 // meet empty or null item, continue
-                if (String.IsNullOrWhiteSpace(item))
+                if (String.IsNullOrEmpty(item))
                 {
                     continue;
                 }
