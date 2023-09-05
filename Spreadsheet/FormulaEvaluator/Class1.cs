@@ -3,81 +3,80 @@ using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
-/**
- * @ author:      Zelin Yi
- * @ github id:   yi-zelin 
- * @ UID:         u1442451
- * @ Date:        Sep. 3. 2023
- */
 namespace FormulaEvaluator
 {
+    /// <summary>
+    /// evaluate infix expression. 
+    /// </summary>
     public static class Evaluator
     {
+        /// <summary>
+        /// variable -> int, to get int value of a variable
+        /// </summary>
+        /// <param name="v">variable</param>
+        /// <returns>int value of the variable</returns>
         public delegate int Lookup(String v);
 
-        /*
-         * is integer
-         * help methods to analyze if is int number
-         */
+
+        ///<summary>help methods to analyze if parameter is a int number</summary> 
         private static bool IsIntNum(String s)
         {
             s = s.Trim();
             return s.All(char.IsDigit);
         }
 
-        /*
-         * is a variable
-         * using regular expression to match begin with >=1 letter, end with >=1 number, and nothing in between
-         */
+        ///<summary>help methods to analyze if parameter is a valid variable</summary> 
         private static bool IsVar(String s)
         {
+            /// using regular expression to match String start with letter, then followed by number
             string pattern = @"^[A-Za-z]+[0-9]+$";
             return Regex.IsMatch(s, pattern);
         }
 
-        // is valid operator
-        private static bool isOperator(String s)
-        {
-            return s == "+" || s == "-" || s == "*" || s == "/" || s == "(" || s == ")";
-        }
+        /// <summary>help methods to analyze if parameter is valid operator</summary>
+        private static bool isOperator(String s) { return s == "+" || s == "-" || s == "*" || s == "/" || s == "(" || s == ")"; }
 
-        // is + or -
-        private static bool IsPlusOrSubt(String s)
-        {
-            return s == "+" || s == "-";
-        }
+        /// <summary>help method to analyze "+" or "-"</summary>
+        private static bool IsPlusOrSubt(String s) { return s == "+" || s == "-"; }
 
-        // is * or /
-        private static bool IsMulOrDiv(String s)
-        {
-            return s == "*" || s == "/";
-        }
+        /// <summary>help method to analyze "*" or "/"</summary>
+        private static bool IsMulOrDiv(String s) { return s == "*" || s == "/"; }
 
-        /* a help method to calculate int operate int case
-         * throw: ArgumentException when division by zero
-         */
+
+        /// <summary>
+        /// a help method to calculate infix expression
+        /// </summary>
+        /// <param name="num1">first int number</param>
+        /// <param name="opr">the operator</param>
+        /// <param name="num2">second int number</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">throw when division by zerr</exception>
+        /// <exception cref="ArgumentException">if throws unexpectied issue, means program has bug</exception>
         private static int Calculate(int num1, String opr, int num2)
         {
             if (opr == "+") { return num1 + num2; }
-            else if (opr == "-") {  return num1 - num2; }
-            else if (opr == "*") {  return num1 * num2; }
-            else if (opr == "/") { 
+            else if (opr == "-") { return num1 - num2; }
+            else if (opr == "*") { return num1 * num2; }
+            else if (opr == "/")
+            {
                 if (num2 == 0) { throw new ArgumentException("A division by zero occurs"); }
-                return num1 / num2; 
+                return num1 / num2;
             }
-            throw new ArgumentException("unexpectied issue occur in Calculate method with num1 = "+num1+" num2 = "+num2+" opr = "+opr);
+            throw new ArgumentException("unexpectied issue occur in Calculate method with num1 = " + num1 + " num2 = " + num2 + " opr = " + opr);
         }
 
 
-
-        public static int Evaluate(String exp, Lookup variableEvaluator) //, Lookup variableEvaluator
+        /// <summary>
+        /// the core code. make different action based on different condition.
+        /// </summary>
+        /// <param name="exp">the original infix expression</param>
+        /// <param name="variableEvaluator">to get the int number from variable</param>
+        /// <returns>returns Integer result of original infix expression</returns>
+        /// <exception cref="ArgumentException">thorws when any issue occurs</exception>
+        public static int Evaluate(String exp, Lookup variableEvaluator)
         {
-            //string[] substrings = Regex.Split(Regex.Replace(exp, @"\s+", ""), "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
+            if (String.IsNullOrWhiteSpace(exp)) throw new ArgumentException("empty or white space input");
             string[] substrings = Regex.Split(exp, "(\\()|(\\))|(-)|(\\+)|(\\*)|(/)");
-           /* foreach (var v in substrings)
-            {
-                Console.WriteLine(v);
-            }*/
 
             Stack<int> values = new Stack<int>();
             Stack<String> operators = new Stack<String>();
@@ -85,18 +84,14 @@ namespace FormulaEvaluator
             foreach (String item in substrings)
             {
                 // meet empty or null item, continue
-                if (String.IsNullOrWhiteSpace(item))
-                {
-                    continue;
-                }
+                if (String.IsNullOrWhiteSpace(item)) { continue; }
 
                 // int number or variable as int number
                 else if (IsIntNum(item) || IsVar(item))
                 {
                     int intItem;
-                    if (IsVar(item)) { intItem = variableEvaluator(item); } 
-                    else { 
-                        intItem = int.Parse(item); }
+                    if (IsVar(item)) { intItem = variableEvaluator(item); }
+                    else { intItem = int.Parse(item); }
 
                     // operator stack is not empty and '*' or '/' is at the top of the operator stack
                     if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
@@ -124,10 +119,7 @@ namespace FormulaEvaluator
                 }
 
                 //is "*", "/", "("
-                else if (item == "*" || item == "/" || item  == "(")
-                {
-                    operators.Push(item);
-                }
+                else if (item == "*" || item == "/" || item == "(") { operators.Push(item); }
 
                 // is "("
                 else if (item == ")")
@@ -149,25 +141,22 @@ namespace FormulaEvaluator
                 }
 
                 // for an invalid input, throw exception
-                else
-                {
-                    throw new ArgumentException(item + " is not a valid input");
-                }
+                else { throw new ArgumentException(item + " is not a valid input"); }
             }
 
-            // two cases when last token has been processed
-            // Operator stack is empty
+            // three cases when last token has been processed
+            // Case 1:  Operator stack is empty
             if (values.Count == 1 && operators.Count == 0) { return values.Pop(); }
 
-            // Operator stack is not empty
+            // Case 2:  Operator stack is not empty
             else if (values.Count == 2 && operators.Count == 1)
             {
                 int intItem = values.Pop();
-                return Calculate(values.Pop(),operators.Pop(), intItem);
+                return Calculate(values.Pop(), operators.Pop(), intItem);
             }
 
-            // unknow cases, bug if appear
-            else { throw new ArgumentException("an unexpected exception occur in result stack"); }
+            // lack operator or number
+            else { throw new ArgumentException("lack operator or number"); }
         }
     }
 }
