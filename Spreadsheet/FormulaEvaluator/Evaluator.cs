@@ -121,7 +121,7 @@ namespace FormulaEvaluator
                 //is "*", "/", "("
                 else if (item == "*" || item == "/" || item == "(") { operators.Push(item); }
 
-                // is "("
+                // is ")"
                 else if (item == ")")
                 {
                     if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
@@ -130,7 +130,7 @@ namespace FormulaEvaluator
                         int intItem = values.Pop();
                         values.Push(Calculate(values.Pop(), operators.Pop(), intItem));
                     }
-                    if (operators.Pop() != "(") { throw new ArgumentException("'(' isn't found where expected"); }
+                    if (operators.Count == 0 || operators.Pop() != "(") { throw new ArgumentException("'(' isn't found where expected"); }
                     if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
                     {
                         if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }

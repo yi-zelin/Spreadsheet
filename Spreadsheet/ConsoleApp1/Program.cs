@@ -66,14 +66,17 @@ namespace ConsoleApp1
                 ThrowsException("");                // null input
                 ThrowsException("4/0");             // division zero
                 ThrowsException("1+5-");            // lack number
+
                 ThrowsException("1+5 7");           // lack operator
                 ThrowsException("7+(9*1");          // lack operator
                 ThrowsException("7+9*1)");          // lack operator
                 ThrowsException("9a * 3");          // invalid variable
+
                 ThrowsException("a9a * 3");         // invalid variable
                 ThrowsException("A * 3");           // invalid variable
                 ThrowsException("7c+1");            // invalid variable
                 ThrowsException("774a");            // invalid variable
+
                 ThrowsException("+ +");             // invalid input
                 ThrowsException("9 $ 10");          // invalid input
                 ThrowsException("9$10");            // invalid input
