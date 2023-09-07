@@ -58,10 +58,17 @@ public class DependencyGraphTest
     ///Empty graph should contain nothing
     ///</summary>
     [TestMethod()]
-    public void SimpleEmptyTest()
+    public void AdvancedEmptyTest()
     {
         DependencyGraph t = new DependencyGraph();
         Assert.AreEqual(0, t.NumDependencies);
+        Assert.AreEqual(0, t.NumDependees("A1"));
+        Assert.IsFalse(t.HasDependents("A1"));
+        Assert.IsFalse(t.HasDependees("A1"));
+        IEnumerator<string> e1 = t.GetDependees("A1").GetEnumerator();
+        Assert.IsFalse(e1.MoveNext());
+        IEnumerator<string> e2 = t.GetDependents("A1").GetEnumerator();
+        Assert.IsFalse(e1.MoveNext());
     }
 
 
