@@ -106,7 +106,7 @@ public class DependencyGraph
     public IEnumerable<string> GetDependents(string s)
     {
         if (!CellsMap.ContainsKey(s)) { return Enumerable.Empty<string>(); }
-        return CellsMap[s].Dependee;
+        return CellsMap[s].Dependent;
     }
 
 
@@ -116,7 +116,7 @@ public class DependencyGraph
     public IEnumerable<string> GetDependees(string s)
     {
         if (!CellsMap.ContainsKey(s)) { return Enumerable.Empty<string>(); }
-        return CellsMap[s].Dependent;
+        return CellsMap[s].Dependee;
     }
 
 
@@ -134,39 +134,21 @@ public class DependencyGraph
     {
         if (!CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
         {
-            var temp1 = new Cell();
-            temp1.Dependee.Add(t);
-            CellsMap.Add(s, temp1);
-            
-
-            var temp2 = new Cell();
-            temp2.Dependent.Add(s);
-            CellsMap.Add(t, temp2);
-
-            pair++;
+            CellsMap.Add(s, new Cell());
+            CellsMap.Add(t, new Cell());
         }
         else if (!CellsMap.ContainsKey(s) && CellsMap.ContainsKey(t))
         {
-            var temp1 = new Cell();
-            temp1.Dependee.Add(t);
-            CellsMap.Add(s, temp1);
-
-            CellsMap[t].Dependent.Add(s);
-            pair++;
+            CellsMap.Add(s, new Cell());
         }
         else if (CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
         {
-            CellsMap[s].Dependee.Add(t);
-
-            var temp2 = new Cell();
-            temp2.Dependent.Add(s);
-            CellsMap.Add(t, temp2);
-            pair++;
+            CellsMap.Add(t, new Cell());
         }
-        else if (!CellsMap[s].Dependee.Contains(t))
+        if (!CellsMap[s].Dependent.Contains(t))
         {
-            CellsMap[s].Dependee.Add(t);
-            CellsMap[t].Dependent.Add(s);
+            CellsMap[s].Dependent.Add(t);
+            CellsMap[t].Dependee.Add(s);
             pair++;
         }
     }
@@ -179,10 +161,10 @@ public class DependencyGraph
     /// <param name="t"></param>
     public void RemoveDependency(string s, string t)
     {
-        if (CellsMap.ContainsKey(s) && CellsMap[s].Dependee.Contains(t))
+        if (CellsMap.ContainsKey(s) && CellsMap[s].Dependent.Contains(t))
         {
-            CellsMap[s].Dependee.Remove(t);
-            CellsMap[t].Dependent.Remove(s);
+            CellsMap[s].Dependent.Remove(t);
+            CellsMap[t].Dependee.Remove(s);
             pair--;
         }
     }
