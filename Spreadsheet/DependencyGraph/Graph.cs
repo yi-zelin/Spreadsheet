@@ -8,87 +8,46 @@ namespace DependencyGraph
     /// </summary>
     public class Graph
     {
-        private Dictionary<String, SignedEdges> VariablesMap = new Dictionary<string, SignedEdges>();
-        private class SignedEdges
+        private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
+        public class Cell
         {
             // depend to
-            internal List<String> Dependents;
+            private HashSet<String> Dependent;
 
             // depend on
-            internal List<String> Dependees;
+            private HashSet<String> Dependee;
 
-            internal SignedEdges()
+            internal Cell()
             {
-                Dependents = new List<String>();
-                Dependees = new List<String>();
+                Dependent = new HashSet<string>();
+                Dependee = new HashSet<string>();
             }
 
-            internal SignedEdges(List<String> Dependents, List<String> Dependees)
+            internal Cell(List<String> Dependents, List<String> Dependees)
             {
-                this.Dependents = Dependents;
-                this.Dependees = Dependees;
+                this.Dependent = new HashSet<string> (Dependents);
+                this.Dependee = new HashSet<string>(Dependees);
             }
+
+            public bool DependentContain(String CellName) { return Dependent.Contains (CellName); }
+            public bool DependeeContain(String CellName) { return Dependee.Contains (CellName); }
+            public bool DependentAdd(String CellName) { return Dependent.Add (CellName); }
+            public bool DependeeAdd(String CellName) { return Dependee.Add (CellName); }
+            public bool DependentRemove(String CellName) { return Dependent.Remove (CellName); }
+            public bool DependeeRemove(String CellName) { return Dependee.Remove (CellName); }
         }
 
 
-        public bool Contain(String s) { return VariablesMap.ContainsKey(s); }
+        public bool ContainCell(String s) { return CellsMap.ContainsKey(s); }
 
-        public int Size() { return VariablesMap.Count; }
+        public int Size() { return CellsMap.Count; }
 
-        public void Clear() { VariablesMap.Clear(); }
+        public void Clear() { CellsMap.Clear(); }
 
-        public void WriteCell(String name, List<String> s1, List<String> s2) { VariablesMap.Add(name, new SignedEdges(s1, s2)); }
+        public void WriteCell(String name, List<String> s1, List<String> s2) { CellsMap.Add(name, new Cell(s1, s2)); }
 
-        public bool AddEmptyCell(String name) {
-            if (VariablesMap.ContainsKey(name)) { return false; }
-            VariablesMap.Add(name, new SignedEdges());
-            return true;
-        }
+        public void SetEmptyCell(String name) { CellsMap.Add(name, new Cell()); }
 
-        public bool DependTo(String variable, String item)
-        {
-            if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependents.Add(item);
-            return true;
-        }
-
-        public bool DependOn(String variable, String item)
-        {
-            if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependees.Add(item);
-            return true;
-        }
-
-        public bool IfDependTo(String variable, String item) { return VariablesMap[variable].Dependents.Contains(item); }
-
-        public bool IfDependOn(String variable, String item) { return VariablesMap[variable].Dependees.Contains(item); }
-
-        /// <summary>
-        /// Remove item in Dependents
-        /// Have to check if contain before use
-        /// </summary>
-        /// <param name="variable">variable in graph</param>
-        /// <param name="item">item we want to remove in variable_Dependents</param>
-        /// <returns>true if variable are in graph, false if variable are not in graph</returns>
-        public bool RemoveDependTo(String variable, String item)
-        {
-            if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependents.Remove(item);
-            return true;
-        }
-
-        /// <summary>
-        /// Remove item in Dependees
-        /// Have to check if contain before use
-        /// </summary>
-        /// <param name="variable">variable in graph</param>
-        /// <param name="item">item we want to remove in variable_Dependents</param>
-        /// <returns>true if variable are in graph, false if variable are not in graph</returns>
-        public bool RemoveDependOn(String variable, String item)
-        {
-            if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependees.Remove(item);
-            return true;
-        }
+        public Cell GetCell (String name) { return CellsMap[name]; }
     }
 }
