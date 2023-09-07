@@ -12,6 +12,49 @@ public class DependencyGraphTest
 {
 
     /// <summary>
+    /// Test HasDependents, HasDependees, NumDependees in an easy graph
+    /// </summary>
+    [TestMethod()]
+    public void SimpleDependencyNumTest()
+    {
+        DependencyGraph graph = new DependencyGraph();
+        graph.AddDependency("A1", "A2");
+        Assert.IsTrue(graph.HasDependents("A1"));
+        Assert.IsTrue(graph.HasDependees("A2"));
+        Assert.IsFalse(graph.HasDependees("A1"));
+        Assert.IsFalse(graph.HasDependents("A2"));
+        Assert.IsFalse(graph.HasDependents("NotExist"));
+
+        Assert.AreEqual(1, graph.NumDependees("A2"));
+        Assert.AreEqual(0, graph.NumDependees("A1"));
+        Assert.AreEqual(0, graph.NumDependees("NotExist"));
+    }
+
+    [TestMethod()]
+    public void BranchTest()
+    {
+        DependencyGraph graph = new DependencyGraph();
+        graph.AddDependency("A1", "A2");
+        Assert.IsFalse(graph.HasDependees("NotExist"));
+        Assert.IsFalse(graph.HasDependents("NotExist"));
+        Assert.AreEqual(0, graph.GetDependents("NotExist").Count());
+        Assert.AreEqual(0, graph.GetDependees("NotExist").Count());
+        Assert.AreEqual(1, graph.NumDependencies);
+        graph.RemoveDependency("A3", "A1");
+        Assert.AreEqual(1, graph.NumDependencies);
+        graph.RemoveDependency("A2", "A1");
+        Assert.AreEqual(1, graph.NumDependencies);
+        graph.RemoveDependency("A1", "A2");
+        Assert.AreEqual(0, graph.NumDependencies);
+
+        graph.AddDependency("A1", "A2");
+        graph.AddDependency("A1", "A3");
+        graph.AddDependency("A4", "A1");
+        Assert.AreEqual(3, graph.NumDependencies);
+        graph.AddDependency("A5", "A6");
+    }
+
+    /// <summary>
     ///Empty graph should contain nothing
     ///</summary>
     [TestMethod()]

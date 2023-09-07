@@ -141,7 +141,7 @@ public class DependencyGraph
         {
             CellsMap.Add(s, new Cell());
         }
-        else if (CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
+        else if (!CellsMap.ContainsKey(t))
         {
             CellsMap.Add(t, new Cell());
         }
@@ -161,7 +161,7 @@ public class DependencyGraph
     /// <param name="t"></param>
     public void RemoveDependency(string s, string t)
     {
-        if (CellsMap.ContainsKey(s) && CellsMap[s].Dependent.Contains(t))
+        if ((CellsMap.ContainsKey(s) && CellsMap[s].Dependent.Contains(t)))
         {
             CellsMap[s].Dependent.Remove(t);
             CellsMap[t].Dependee.Remove(s);
