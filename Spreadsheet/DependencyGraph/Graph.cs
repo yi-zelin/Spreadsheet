@@ -28,26 +28,34 @@ namespace DependencyGraph
                 this.Dependents = Dependents;
                 this.Dependees = Dependees;
             }
-
         }
 
-        public bool Contain (String s) { return VariablesMap.ContainsKey(s); }
+
+        public bool Contain(String s) { return VariablesMap.ContainsKey(s); }
 
         public int Size() { return VariablesMap.Count; }
 
         public void Clear() { VariablesMap.Clear(); }
 
-        public void WriteCell(String name, List<String> s1, List<String> s2) { VariablesMap.Add(name,new SignedEdges(s1, s2)); }
+        public void WriteCell(String name, List<String> s1, List<String> s2) { VariablesMap.Add(name, new SignedEdges(s1, s2)); }
 
-        public bool AddDependTo(String variable, String item) { 
+        public bool AddEmptyCell(String name) {
+            if (VariablesMap.ContainsKey(name)) { return false; }
+            VariablesMap.Add(name, new SignedEdges());
+            return true;
+        }
+
+        public bool DependTo(String variable, String item)
+        {
             if (!VariablesMap.ContainsKey(variable)) { return false; }
             VariablesMap[variable].Dependents.Add(item);
             return true;
         }
 
-        public bool AddDependOn(String variable, String item) {
+        public bool DependOn(String variable, String item)
+        {
             if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependees.Add(item); 
+            VariablesMap[variable].Dependees.Add(item);
             return true;
         }
 
@@ -62,7 +70,8 @@ namespace DependencyGraph
         /// <param name="variable">variable in graph</param>
         /// <param name="item">item we want to remove in variable_Dependents</param>
         /// <returns>true if variable are in graph, false if variable are not in graph</returns>
-        public bool RemoveDependTo (String variable,String item) {
+        public bool RemoveDependTo(String variable, String item)
+        {
             if (!VariablesMap.ContainsKey(variable)) { return false; }
             VariablesMap[variable].Dependents.Remove(item);
             return true;
@@ -75,9 +84,10 @@ namespace DependencyGraph
         /// <param name="variable">variable in graph</param>
         /// <param name="item">item we want to remove in variable_Dependents</param>
         /// <returns>true if variable are in graph, false if variable are not in graph</returns>
-        public bool RemoveDependOn(String variable, String item) {
+        public bool RemoveDependOn(String variable, String item)
+        {
             if (!VariablesMap.ContainsKey(variable)) { return false; }
-            VariablesMap[variable].Dependees.Remove(item); 
+            VariablesMap[variable].Dependees.Remove(item);
             return true;
         }
     }
