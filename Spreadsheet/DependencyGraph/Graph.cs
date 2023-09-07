@@ -1,53 +1,223 @@
-﻿using System.Collections;
-using System.Numerics;
+﻿// Skeleton implementation by: Joe Zachary, Daniel Kopta, Travis Martin for CS 3500
+// Last updated: August 2023 (small tweak to API)
 
-namespace DependencyGraph
+namespace SpreadsheetUtilities;
+
+/// <summary>
+/// (s1,t1) is an ordered pair of strings
+/// t1 depends on s1; s1 must be evaluated before t1
+/// 
+/// A DependencyGraph can be modeled as a set of ordered pairs of strings.  Two ordered pairs
+/// (s1,t1) and (s2,t2) are considered equal if and only if s1 equals s2 and t1 equals t2.
+/// Recall that sets never contain duplicates.  If an attempt is made to add an element to a 
+/// set, and the element is already in the set, the set remains unchanged.
+/// 
+/// Given a DependencyGraph DG:
+/// 
+///    (1) If s is a string, the set of all strings t such that (s,t) is in DG is called dependents(s).
+///        (The set of things that depend on s)    
+///        
+///    (2) If s is a string, the set of all strings t such that (t,s) is in DG is called dependees(s).
+///        (The set of things that s depends on) 
+//
+// For example, suppose DG = {("a", "b"), ("a", "c"), ("b", "d"), ("d", "d")}
+//     dependents("a") = {"b", "c"}
+//     dependents("b") = {"d"}
+//     dependents("c") = {}
+//     dependents("d") = {"d"}
+//     dependees("a") = {}
+//     dependees("b") = {"a"}
+//     dependees("c") = {"a"}
+//     dependees("d") = {"b", "d"}
+/// </summary>
+public class DependencyGraph
 {
-    /// <summary>
-    /// Graph is based on a Dictionary and inner class called SignedEdges
-    /// </summary>
-    public class Graph
+    private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
+    private int pair;
+    public class Cell
     {
-        private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
-        public class Cell
+        // depend to
+        public HashSet<String> Dependent;
+
+        // depend on
+        public HashSet<String> Dependee;
+
+        public Cell()
         {
-            // depend to
-            private HashSet<String> Dependent;
-
-            // depend on
-            private HashSet<String> Dependee;
-
-            internal Cell()
-            {
-                Dependent = new HashSet<string>();
-                Dependee = new HashSet<string>();
-            }
-
-            internal Cell(List<String> Dependents, List<String> Dependees)
-            {
-                this.Dependent = new HashSet<string> (Dependents);
-                this.Dependee = new HashSet<string>(Dependees);
-            }
-
-            public bool DependentContain(String CellName) { return Dependent.Contains (CellName); }
-            public bool DependeeContain(String CellName) { return Dependee.Contains (CellName); }
-            public bool DependentAdd(String CellName) { return Dependent.Add (CellName); }
-            public bool DependeeAdd(String CellName) { return Dependee.Add (CellName); }
-            public bool DependentRemove(String CellName) { return Dependent.Remove (CellName); }
-            public bool DependeeRemove(String CellName) { return Dependee.Remove (CellName); }
+            Dependent = new HashSet<string>();
+            Dependee = new HashSet<string>();
         }
+    }
+
+    /// <summary>
+    /// Creates an empty DependencyGraph.
+    /// </summary>
+    public DependencyGraph()
+    {
+        CellsMap = new Dictionary<string, Cell>();
+        pair = 0;
+    }
 
 
-        public bool ContainCell(String s) { return CellsMap.ContainsKey(s); }
+    /// <summary>
+    /// The number of ordered pairs in the DependencyGraph.
+    /// This is an example of a property.
+    /// </summary>
+    public int NumDependencies
+    {
+        get { return pair; }
+    }
 
-        public int Size() { return CellsMap.Count; }
 
-        public void Clear() { CellsMap.Clear(); }
+    /// <summary>
+    /// Returns the size of dependees(s),
+    /// that is, the number of things that s depends on.
+    /// </summary>
+    public int NumDependees(string s)
+    {
+        if (CellsMap.ContainsKey(s)) { return CellsMap[s].Dependee.Count; }
+        return 0;
+    }
 
-        public void WriteCell(String name, List<String> s1, List<String> s2) { CellsMap.Add(name, new Cell(s1, s2)); }
 
-        public void SetEmptyCell(String name) { CellsMap.Add(name, new Cell()); }
+    /// <summary>
+    /// Reports whether dependents(s) is non-empty.
+    /// </summary>
+    public bool HasDependents(string s)
+    {
+        if (!CellsMap.ContainsKey(s)) { return false; }
+        return CellsMap[s].Dependent.Count != 0;
+    }
 
-        public Cell GetCell (String name) { return CellsMap[name]; }
+
+    /// <summary>
+    /// Reports whether dependees(s) is non-empty.
+    /// </summary>
+    public bool HasDependees(string s)
+    {
+        if (!CellsMap.ContainsKey(s)) { return false; }
+        return CellsMap[s].Dependee.Count != 0;
+    }
+
+
+    /// <summary>
+    /// Enumerates dependents(s).
+    /// </summary>
+    public IEnumerable<string> GetDependents(string s)
+    {
+        if (!CellsMap.ContainsKey(s)) { return Enumerable.Empty<string>(); }
+        return CellsMap[s].Dependee;
+    }
+
+
+    /// <summary>
+    /// Enumerates dependees(s).
+    /// </summary>
+    public IEnumerable<string> GetDependees(string s)
+    {
+        if (!CellsMap.ContainsKey(s)) { return Enumerable.Empty<string>(); }
+        return CellsMap[s].Dependent;
+    }
+
+
+    /// <summary>
+    /// <para>Adds the ordered pair (s,t), if it doesn't exist</para>
+    /// 
+    /// <para>This should be thought of as:</para>   
+    /// 
+    ///   t depends on s
+    ///
+    /// </summary>
+    /// <param name="s"> s must be evaluated first. T depends on S</param>
+    /// <param name="t"> t cannot be evaluated until s is</param>
+    public void AddDependency(string s, string t)
+    {
+        if (!CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
+        {
+            var temp1 = new Cell();
+            temp1.Dependee.Add(t);
+            CellsMap.Add(s, temp1);
+            
+
+            var temp2 = new Cell();
+            temp2.Dependent.Add(s);
+            CellsMap.Add(t, temp2);
+
+            pair++;
+        }
+        else if (!CellsMap.ContainsKey(s) && CellsMap.ContainsKey(t))
+        {
+            var temp1 = new Cell();
+            temp1.Dependee.Add(t);
+            CellsMap.Add(s, temp1);
+
+            CellsMap[t].Dependent.Add(s);
+            pair++;
+        }
+        else if (CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
+        {
+            CellsMap[s].Dependee.Add(t);
+
+            var temp2 = new Cell();
+            temp2.Dependent.Add(s);
+            CellsMap.Add(t, temp2);
+            pair++;
+        }
+        else if (!CellsMap[s].Dependee.Contains(t))
+        {
+            CellsMap[s].Dependee.Add(t);
+            CellsMap[t].Dependent.Add(s);
+            pair++;
+        }
+    }
+
+
+    /// <summary>
+    /// Removes the ordered pair (s,t), if it exists
+    /// </summary>
+    /// <param name="s"></param>
+    /// <param name="t"></param>
+    public void RemoveDependency(string s, string t)
+    {
+        if (CellsMap.ContainsKey(s) && CellsMap[s].Dependee.Contains(t))
+        {
+            CellsMap[s].Dependee.Remove(t);
+            CellsMap[t].Dependent.Remove(s);
+            pair--;
+        }
+    }
+
+
+    /// <summary>
+    /// Removes all existing ordered pairs of the form (s,r).  Then, for each
+    /// t in newDependents, adds the ordered pair (s,t).
+    /// </summary>
+    public void ReplaceDependents(string s, IEnumerable<string> newDependents)
+    {
+        foreach(string item in CellsMap.Keys)
+        {
+            RemoveDependency(s, item);
+        }
+        foreach (string item in newDependents)
+        {
+            AddDependency(s, item);
+        }
+    }
+
+
+    /// <summary>
+    /// Removes all existing ordered pairs of the form (r,s).  Then, for each 
+    /// t in newDependees, adds the ordered pair (t,s).
+    /// </summary>
+    public void ReplaceDependees(string s, IEnumerable<string> newDependees)
+    {
+        foreach (string item in CellsMap.Keys)
+        {
+            RemoveDependency(item,s);
+        }
+        foreach (string item in newDependees)
+        {
+            AddDependency(item, s);
+        }
     }
 }
