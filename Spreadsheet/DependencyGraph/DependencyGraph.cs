@@ -34,13 +34,14 @@ public class DependencyGraph
 {
     private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
     private int pair;
-    public class Cell
+    internal int d = 1;
+    private class Cell
     {
         // depend to
-        public HashSet<String> Dependent;
+        internal HashSet<String> Dependent;
 
         // depend on
-        public HashSet<String> Dependee;
+        internal HashSet<String> Dependee;
 
         public Cell()
         {
