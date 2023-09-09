@@ -72,6 +72,7 @@ public class DependencyGraph
     /// <summary>
     /// Returns the size of dependees(s),
     /// that is, the number of things that s depends on.
+    /// * return 0 when s is not in graph, won't throw exception
     /// </summary>
     public int NumDependees(string s)
     {
@@ -82,6 +83,7 @@ public class DependencyGraph
 
     /// <summary>
     /// Reports whether dependents(s) is non-empty.
+    /// * return false when s is not in graph, won't throw exception
     /// </summary>
     public bool HasDependents(string s)
     {
@@ -92,6 +94,7 @@ public class DependencyGraph
 
     /// <summary>
     /// Reports whether dependees(s) is non-empty.
+    /// * return false when s is not in graph, won't throw exception
     /// </summary>
     public bool HasDependees(string s)
     {
@@ -102,6 +105,7 @@ public class DependencyGraph
 
     /// <summary>
     /// Enumerates dependents(s).
+    /// * return empty list when s is not in graph, won't throw exception
     /// </summary>
     public IEnumerable<string> GetDependents(string s)
     {
@@ -112,6 +116,7 @@ public class DependencyGraph
 
     /// <summary>
     /// Enumerates dependees(s).
+    /// * return empty list when s is not in graph, won't throw exception
     /// </summary>
     public IEnumerable<string> GetDependees(string s)
     {
@@ -127,6 +132,7 @@ public class DependencyGraph
     /// 
     ///   t depends on s
     ///
+    /// * if (s,t) already exist, do nothing
     /// </summary>
     /// <param name="s"> s must be evaluated first. T depends on S</param>
     /// <param name="t"> t cannot be evaluated until s is</param>
