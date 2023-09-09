@@ -34,7 +34,6 @@ public class DependencyGraph
 {
     private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
     private int pair;
-    internal int d = 1;
     private class Cell
     {
         // depend to
@@ -133,19 +132,25 @@ public class DependencyGraph
     /// <param name="t"> t cannot be evaluated until s is</param>
     public void AddDependency(string s, string t)
     {
+        // both s and t are not in the dictionary
         if (!CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
         {
             CellsMap.Add(s, new Cell());
             CellsMap.Add(t, new Cell());
         }
+        // s not in the dictionary, but t is in dictionary
         else if (!CellsMap.ContainsKey(s) && CellsMap.ContainsKey(t))
         {
             CellsMap.Add(s, new Cell());
         }
+        // t is not in dictionary, s in dictionary
         else if (!CellsMap.ContainsKey(t))
         {
             CellsMap.Add(t, new Cell());
         }
+
+        // at here, s and t both in dictionary.
+        // if pair (s, t) not exist, add pair (s, t)
         if (!CellsMap[s].Dependent.Contains(t))
         {
             CellsMap[s].Dependent.Add(t);
@@ -177,10 +182,12 @@ public class DependencyGraph
     /// </summary>
     public void ReplaceDependents(string s, IEnumerable<string> newDependents)
     {
+        // remove all existing ordered pars of form (s,r)
         foreach (string item in CellsMap.Keys)
         {
             RemoveDependency(s, item);
         }
+        // adds ordered pair (s,t) for each t in newDependents
         foreach (string item in newDependents)
         {
             AddDependency(s, item);
@@ -194,10 +201,12 @@ public class DependencyGraph
     /// </summary>
     public void ReplaceDependees(string s, IEnumerable<string> newDependees)
     {
+        // remove all existing ordered pairs of the form (r,s)
         foreach (string item in CellsMap.Keys)
         {
             RemoveDependency(item, s);
         }
+        // adds the ordered pair (t,s) for each t in newDependees
         foreach (string item in newDependees)
         {
             AddDependency(item, s);
