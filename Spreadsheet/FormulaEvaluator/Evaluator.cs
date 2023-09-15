@@ -33,9 +33,6 @@ namespace FormulaEvaluator
             return Regex.IsMatch(s, pattern);
         }
 
-        /// <summary>help methods to analyze if parameter is valid operator</summary>
-        private static bool isOperator(String s) { return s == "+" || s == "-" || s == "*" || s == "/" || s == "(" || s == ")"; }
-
         /// <summary>help method to analyze "+" or "-"</summary>
         private static bool IsPlusOrSubt(String s) { return s == "+" || s == "-"; }
 

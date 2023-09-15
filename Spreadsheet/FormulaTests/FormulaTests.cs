@@ -79,14 +79,26 @@ namespace FormulaTests
         public void FormulaConstructorTest()
         {
             // help to analyze what's the exactly problem 
-            List<string> a = GetTokens("(((x3 + x2))))").ToList();
+            List<string> a = GetTokens("9.-1").ToList();
             foreach (string s in a)
             {
                 Console.WriteLine(s);
             }
+            List<string> names = new List<string>() { "John", "Anna", "Monica" };
+            var result = String.Join("", names.ToArray());
+            Console.WriteLine(result);
+            Console.WriteLine("" + double.Parse("3e3"));
+            Console.WriteLine("" + double.Parse("3E3"));
+            Console.WriteLine("" + double.Parse("3000"));
+
 
             // correct case
-            var formula = new Formula("x1+y3", N, V);
+            Assert.IsNotNull(new Formula("x1+y3", N, V));
+            Assert.IsNotNull(new Formula("3e5", N, V));
+            Assert.IsNotNull(new Formula("3E5", N, V));
+            Assert.IsNotNull(new Formula("9.4", N, V));
+            Assert.IsNotNull(new Formula("9.4000000", N, V));
+            Assert.IsNotNull(new Formula("9.", N, V));
 
             // Ruin One Token Rule
             ExceptionWithMsg<FormulaFormatException>(() => new Formula("       ", N, V), "One Token Rule");
@@ -129,6 +141,8 @@ namespace FormulaTests
             ExceptionWithMsg<FormulaFormatException>(() => new Formula("(1+x5)2+x3", N, V), "Extra Following Rule");
             ExceptionWithMsg<FormulaFormatException>(() => new Formula("(1+x5(2+x3))", N, V), "Extra Following Rule");
             ExceptionWithMsg<FormulaFormatException>(() => new Formula("(1 1 + x5*(2+x3))", N, V), "Extra Following Rule");
+
+            // negative and invalid symbol
 
         }
     }

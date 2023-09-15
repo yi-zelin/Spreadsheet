@@ -29,6 +29,7 @@ namespace SpreadsheetUtilities;
 public class Formula
 {
     private List<string> dataOfFormula;
+    private HashSet<string> normFormVariables;
 
     /// <summary>
     /// Creates a Formula from a string that consists of an infix expression written as
@@ -67,7 +68,7 @@ public class Formula
     /// </summary>
     public Formula(string formula, Func<string, string> normalize, Func<string, bool> isValid)
     {
-        formula = normalize(formula);
+        normFormVariables = new HashSet<string>();
         List<string> tempString = GetTokens(formula).ToList();
         int leftParentheses = 0;
         int rightParentheses = 0;
@@ -97,6 +98,17 @@ public class Formula
 
         for (int i = 0; i <= tempString.Count-1; i++)
         {
+            // format integers, scientific notation to double
+            // 
+            // "3.0000", "3", "3.", "3.0"   => "3"
+            // "3.1000", "3.1"              => "3.1"
+            // "3e3", "3E3", "3000"         => "3000"
+            if (Regex.IsMatch(tempString[i], "^[0-9]+.$") || Regex.IsMatch(tempString[i], "^[0-9]+[e|E|.][0-9]+$"))
+            {
+                tempString[i] = $"{ double.Parse(tempString[i])}";
+            }
+
+            tempString[i] = normalize(tempString[i]);
             string current = tempString[i];
 
             if (current == "(") { leftParentheses++; }
@@ -124,6 +136,9 @@ public class Formula
             if (IsNumOrVar(current, isValid) || current == ")")
             {
                 if (i != lastIndex && !Regex.IsMatch(tempString[i + 1], opeR)) { throw new FormulaFormatException("8 Violate Extra Following Rule"); }
+
+                // add variable into normFormOperator
+                if (isValid(current)) { normFormVariables.Add(current); }
             }
         }
 
@@ -138,15 +153,43 @@ public class Formula
     /// <summary>
     /// help method, static for I want to use this in constructor. being used
     /// multiple times, make program easier to read and debug.
+    /// number matches: 3e4, 3E4, 3.4, 34
     /// </summary>
     /// <param name="s">check if s is number or variable</param>
     /// <param name="isValid">isValid function</param>
     /// <returns>true if s is number or variable</returns>
     private static bool IsNumOrVar(string s, Func<string, bool> isValid)
     {
-        return (isValid(s) || Regex.IsMatch(s, "^[0-9]+$"));
+        return (isValid(s) || Regex.IsMatch(s, "^[0-9]+.?$") || Regex.IsMatch(s, "^[0-9]+[e|E|.][0-9]+$"));
     }
 
+    /// <summary>help method to analyze "+" or "-"</summary>
+    private static bool IsPlusOrSubt(String s) { return s == "+" || s == "-"; }
+
+    /// <summary>help method to analyze "*" or "/"</summary>
+    private static bool IsMulOrDiv(String s) { return s == "*" || s == "/"; }
+
+    /// <summary>
+    /// a help method to calculate infix expression
+    /// </summary>
+    /// <param name="num1">first int number</param>
+    /// <param name="opr">the operator</param>
+    /// <param name="num2">second int number</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">throw when division by zerr</exception>
+    /// <exception cref="ArgumentException">if throws unexpectied issue, means program has bug</exception>
+    private static double Calculate(double num1, String opr, double num2)
+    {
+        if (opr == "+") { return num1 + num2; }
+        else if (opr == "-") { return num1 - num2; }
+        else if (opr == "*") { return num1 * num2; }
+        else if (opr == "/")
+        {
+            if (num2 == 0) { throw new ArgumentException("A division by zero occurs"); }
+            return num1 / num2;
+        }
+        throw new ArgumentException("unexpected issue occur in Calculate method with num1 = " + num1 + " num2 = " + num2 + " opr = " + opr);
+    }
 
 
     /// <summary>
@@ -172,7 +215,82 @@ public class Formula
     /// </summary>
     public object Evaluate(Func<string, double> lookup)
     {
-        return "";
+        Stack<double> values = new Stack<double>();
+        Stack<String> operators = new Stack<String>();
+
+        foreach (String item in dataOfFormula)
+        {
+            // number or variable as number
+            if (Regex.IsMatch(item, "^[0-9a-zA-Z]"))
+            {
+                double doubleItem;
+                if (Regex.IsMatch(item, "^[a-zA-Z]")) { doubleItem = lookup(item); }
+                else { doubleItem = double.Parse(item); }
+
+                // operator stack is not empty and '*' or '/' is at the top of the operator stack
+                if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
+                {
+                    // throw exception if value stack is empty
+                    if (values.Count == 0) { throw new ArgumentException("value stack is empty"); }
+                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    continue;
+                }
+
+                // operator stack is empty or * / is not at top of opr stack
+                values.Push(doubleItem);
+            }
+
+            // is "+" or "-"
+            else if (IsPlusOrSubt(item))
+            {
+                if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
+                {
+                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    double doubleItem = values.Pop();
+                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                }
+                operators.Push(item);
+            }
+
+            //is "*", "/", "("
+            else if (item == "*" || item == "/" || item == "(") { operators.Push(item); }
+
+            // is ")"
+            else if (item == ")")
+            {
+                if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
+                {
+                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    double doubleItem = values.Pop();
+                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                }
+                if (operators.Count == 0 || operators.Pop() != "(") { throw new ArgumentException("'(' isn't found where expected"); }
+                if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
+                {
+                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    double doubleItem = values.Pop();
+                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+
+                }
+            }
+
+            // for an invalid input, throw exception, this should not appear
+            else { throw new ArgumentException(item + " is not a valid input!!!!"); }
+        }
+
+        // three cases when last token has been processed
+        // Case 1:  Operator stack is empty
+        if (values.Count == 1 && operators.Count == 0) { return values.Pop(); }
+
+        // Case 2:  Operator stack is not empty
+        else if (values.Count == 2 && operators.Count == 1)
+        {
+            double doubleItem = values.Pop();
+            return Calculate(values.Pop(), operators.Pop(), doubleItem);
+        }
+
+        // lack operator or number, should not appear
+        else { throw new ArgumentException("lack operator or number!!!!"); }
     }
 
     /// <summary>
@@ -188,7 +306,7 @@ public class Formula
     /// </summary>
     public IEnumerable<string> GetVariables()
     {
-        return new List<string>();
+        return normFormVariables;
     }
 
     /// <summary>
@@ -203,14 +321,14 @@ public class Formula
     /// </summary>
     public override string ToString()
     {
-        return "";
+        return string.Join("",dataOfFormula.ToArray());
     }
 
     /// <summary>
     /// If obj is null or obj is not a Formula, returns false.  Otherwise, reports
     /// whether or not this Formula and obj are equal.
     ///
-    /// Two Formulae are considered equal if they consist of the same tokens in the
+    /// Two Formula are considered equal if they consist of the same tokens in the
     /// same order.  To determine token equality, all tokens are compared as strings
     /// except for numeric tokens and variable tokens.
     /// Numeric tokens are considered equal if they are equal after being "normalized" by
@@ -227,7 +345,8 @@ public class Formula
     /// </summary>
     public override bool Equals(object? obj)
     {
-        return false;
+        if (obj == null || typeof(Formula)!.Equals(obj.GetType())) { return false; }
+        return GetHashCode() == obj.GetHashCode();
     }
 
     /// <summary>
@@ -236,7 +355,7 @@ public class Formula
     /// </summary>
     public static bool operator ==(Formula f1, Formula f2)
     {
-        return false;
+        return f1.Equals(f2);
     }
 
     /// <summary>
@@ -245,17 +364,17 @@ public class Formula
     /// </summary>
     public static bool operator !=(Formula f1, Formula f2)
     {
-        return false;
+        return !(f1 == f2);
     }
 
     /// <summary>
     /// Returns a hash code for this Formula.  If f1.Equals(f2), then it must be the
     /// case that f1.GetHashCode() == f2.GetHashCode().  Ideally, the probability that two
-    /// randomly-generated unequal Formulae have the same hash code should be extremely small.
+    /// randomly-generated unequal Formula have the same hash code should be extremely small.
     /// </summary>
     public override int GetHashCode()
     {
-        return 0;
+        return dataOfFormula.GetHashCode();
     }
 
     /// <summary>
