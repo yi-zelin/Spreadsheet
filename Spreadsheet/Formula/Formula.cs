@@ -231,9 +231,10 @@ public class Formula
                 if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
                 {
                     // throw exception if value stack is empty
-                    if (values.Count == 0) { throw new ArgumentException("value stack is empty"); }
-                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
-                    continue;
+                    if (values.Count == 0) { return new FormulaError("value stack is empty"); }
+                    try{ values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); } 
+                    catch (ArgumentException e) { return new FormulaError(e.Message); }
+                continue;
                 }
 
                 // operator stack is empty or * / is not at top of opr stack
@@ -245,9 +246,10 @@ public class Formula
             {
                 if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
                 {
-                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
                     double doubleItem = values.Pop();
-                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
+                    catch (ArgumentException e) { return new FormulaError(e.Message); }
                 }
                 operators.Push(item);
             }
@@ -260,16 +262,18 @@ public class Formula
             {
                 if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
                 {
-                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
                     double doubleItem = values.Pop();
-                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
+                    catch (ArgumentException e) { return new FormulaError(e.Message); }
                 }
-                if (operators.Count == 0 || operators.Pop() != "(") { throw new ArgumentException("'(' isn't found where expected"); }
+                if (operators.Count == 0 || operators.Pop() != "(") { return new FormulaError("'(' isn't found where expected"); }
                 if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
                 {
-                    if (values.Count <= 1) { throw new ArgumentException("value stack is less than two"); }
+                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
                     double doubleItem = values.Pop();
-                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
+                    catch (ArgumentException e) { return new FormulaError(e.Message); }
 
                 }
             }
@@ -286,11 +290,12 @@ public class Formula
         else if (values.Count == 2 && operators.Count == 1)
         {
             double doubleItem = values.Pop();
-            return Calculate(values.Pop(), operators.Pop(), doubleItem);
+            try { return Calculate(values.Pop(), operators.Pop(), doubleItem); }
+            catch (ArgumentException e) { return new FormulaError(e.Message); }
         }
 
         // lack operator or number, should not appear
-        else { throw new ArgumentException("lack operator or number!!!!"); }
+        else { return new FormulaError("lack operator or number!!!!"); }
     }
 
     /// <summary>
