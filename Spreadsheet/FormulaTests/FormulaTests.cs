@@ -22,14 +22,17 @@ namespace FormulaTests
             try
             {
                 f();
+                Assert.Fail("no exception throws");
             }
             catch (Exception e)
             {
                 bool res = typeof(T)!.Equals(((object)e).GetType()) && Regex.IsMatch(e.Message, s);
+                // not an correct exception
                 if (!typeof(T)!.Equals(((object)e).GetType()))
                 {
                     Assert.Fail("incorrect Exception type: " + ((object)e).GetType());
                 }
+                // correct exception but not include message
                 else if (!Regex.IsMatch(e.Message, s))
                 {
                     Assert.Fail("incorrect Message: " + e.Message);
@@ -144,6 +147,23 @@ namespace FormulaTests
 
             // negative and invalid symbol
 
+        }
+
+        [TestMethod]
+        public void FormulaEvaluateTest()
+        {
+            Assert.AreEqual(300000.0,new Formula("3e5", N, V).Evaluate(s=>1));
+
+            Assert.AreEqual(2.0,new Formula("s1*(3-2)+1", N, V).Evaluate(s=>1));
+            Assert.AreEqual(5.0, new Formula("4*(3-2)+1", N, V).Evaluate(s => 1));
+            Assert.AreEqual(7.0, new Formula("2+4*(3-2)+1", N, V).Evaluate(s => 1));
+            Assert.AreEqual(5.0, new Formula("4*(3-2)+1", N, V).Evaluate(s => 1));
+            Assert.AreEqual(5.0, new Formula("4*(3-2)+1*s1", N, V).Evaluate(s => 1));
+            Assert.AreEqual(5.0, new Formula("5.0", N, V).Evaluate(s => 1));
+
+            Assert.IsTrue((5/12 - (double) new Formula("(2+3)/(4+8)", N, V).Evaluate(s => 1)) <= 0.0000001);
+
+            Console.WriteLine(new Formula("5/0", N, V).Evaluate(s => 1));
         }
     }
 }
