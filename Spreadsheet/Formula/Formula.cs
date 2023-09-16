@@ -96,16 +96,16 @@ public class Formula
             throw new FormulaFormatException("6 Violate Ending Token Rule");
         }
 
-        for (int i = 0; i <= tempString.Count-1; i++)
+        for (int i = 0; i <= tempString.Count - 1; i++)
         {
             // format integers, scientific notation to double
             // 
             // "3.0000", "3", "3.", "3.0"   => "3"
             // "3.1000", "3.1"              => "3.1"
             // "3e3", "3E3", "3000"         => "3000"
-            if (Regex.IsMatch(tempString[i], "^[0-9]+.$") || Regex.IsMatch(tempString[i], "^[0-9]+[e|E|.][0-9]+$"))
+            if (Formula.IsDoubleNum(tempString[i]))
             {
-                tempString[i] = $"{ double.Parse(tempString[i])}";
+                tempString[i] = $"{double.Parse(tempString[i])}";
             }
 
             tempString[i] = normalize(tempString[i]);
@@ -138,7 +138,7 @@ public class Formula
                 if (i != lastIndex && !Regex.IsMatch(tempString[i + 1], opeR)) { throw new FormulaFormatException("8 Violate Extra Following Rule"); }
 
                 // add variable into normFormOperator
-                if (isValid(current)) { normFormVariables.Add(current); }
+                if (IsValidVar(current, isValid)) { normFormVariables.Add(current); }
             }
         }
 
@@ -158,16 +158,40 @@ public class Formula
     /// <param name="s">check if s is number or variable</param>
     /// <param name="isValid">isValid function</param>
     /// <returns>true if s is number or variable</returns>
+    private static bool IsValidVar(string s, Func<string, bool> isValid)
+    {
+        if (Regex.IsMatch(s, @"[a-zA-Z_](?: [a-zA-Z_]|\d)*"))
+        {
+            if (!isValid(s)) { throw new FormulaFormatException("Invalid Variable"); }
+            return true;
+        }
+        return false;
+    }
+
     private static bool IsNumOrVar(string s, Func<string, bool> isValid)
     {
-        return (isValid(s) || Regex.IsMatch(s, "^[0-9]+.?$") || Regex.IsMatch(s, "^[0-9]+[e|E|.][0-9]+$"));
+        return IsDoubleNum(s) || IsValidVar(s, isValid);
+    }
+
+    private static bool IsDoubleNum(string s)
+    {
+        try
+        {
+            double.Parse(s);
+            return true;
+        }
+        catch { return false; }
     }
 
     /// <summary>help method to analyze "+" or "-"</summary>
-    private static bool IsPlusOrSubt(String s) { return s == "+" || s == "-"; }
+    private bool IsPlusOrSubt(String s) => s == "+" || s == "-";
 
     /// <summary>help method to analyze "*" or "/"</summary>
-    private static bool IsMulOrDiv(String s) { return s == "*" || s == "/"; }
+    private bool IsMulOrDiv(String s) => s == "*" || s == "/";
+
+    /// <summary>help method check if s in HashSet</summary>
+    private bool IsVar(string s) => normFormVariables.Contains(s);
+
 
     /// <summary>
     /// a help method to calculate infix expression
@@ -183,12 +207,11 @@ public class Formula
         if (opr == "+") { return num1 + num2; }
         else if (opr == "-") { return num1 - num2; }
         else if (opr == "*") { return num1 * num2; }
-        else if (opr == "/")
+        else
         {
             if (num2 == 0) { throw new ArgumentException("A division by zero occurs"); }
             return num1 / num2;
         }
-        throw new ArgumentException("unexpected issue occur in Calculate method with num1 = " + num1 + " num2 = " + num2 + " opr = " + opr);
     }
 
 
@@ -220,21 +243,34 @@ public class Formula
 
         foreach (String item in dataOfFormula)
         {
-            // number or variable as number
-            if (Regex.IsMatch(item, "^[0-9a-zA-Z]"))
+            // int number or variable as int number
+            if (IsVar(item) || IsDoubleNum(item))
             {
                 double doubleItem;
-                if (Regex.IsMatch(item, "^[a-zA-Z]")) { doubleItem = lookup(item); }
-                else { doubleItem = double.Parse(item); }
+                if (IsVar(item))
+                {
+                    // for lookup return double, so require it throw exception
+                    // when undefined variables occur
+                    try
+                    {
+                        doubleItem = lookup(item);
+                    }
+                    catch (Exception e)
+                    {
+                        return new FormulaError(e.Message);
+                    }
+                }
+                else { doubleItem = int.Parse(item); }
 
                 // operator stack is not empty and '*' or '/' is at the top of the operator stack
                 if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
                 {
-                    // throw exception if value stack is empty
-                    if (values.Count == 0) { return new FormulaError("value stack is empty"); }
-                    try{ values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); } 
+                    try
+                    {
+                        values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    }
                     catch (ArgumentException e) { return new FormulaError(e.Message); }
-                continue;
+                    continue;
                 }
 
                 // operator stack is empty or * / is not at top of opr stack
@@ -246,10 +282,8 @@ public class Formula
             {
                 if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
                 {
-                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
                     double doubleItem = values.Pop();
-                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
-                    catch (ArgumentException e) { return new FormulaError(e.Message); }
+                    values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
                 }
                 operators.Push(item);
             }
@@ -260,26 +294,25 @@ public class Formula
             // is ")"
             else if (item == ")")
             {
-                if (operators.Count != 0 && IsPlusOrSubt(operators.Peek()))
+                if (operators.Count != 0)
                 {
-                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
-                    double doubleItem = values.Pop();
-                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
-                    catch (ArgumentException e) { return new FormulaError(e.Message); }
+                    if (IsPlusOrSubt(operators.Peek()))
+                    {
+                        double doubleItem = values.Pop();
+                        values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    }
                 }
-                if (operators.Count == 0 || operators.Pop() != "(") { return new FormulaError("'(' isn't found where expected"); }
+                operators.Pop();
                 if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
                 {
-                    if (values.Count <= 1) { return new FormulaError("value stack is less than two"); }
                     double doubleItem = values.Pop();
-                    try { values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem)); }
+                    try
+                    {
+                        values.Push(Calculate(values.Pop(), operators.Pop(), doubleItem));
+                    }
                     catch (ArgumentException e) { return new FormulaError(e.Message); }
-
                 }
             }
-
-            // for an invalid input, throw exception, this should not appear
-            else { throw new ArgumentException(item + " is not a valid input!!!!"); }
         }
 
         // three cases when last token has been processed
@@ -287,15 +320,12 @@ public class Formula
         if (values.Count == 1 && operators.Count == 0) { return values.Pop(); }
 
         // Case 2:  Operator stack is not empty
-        else if (values.Count == 2 && operators.Count == 1)
+        else
         {
             double doubleItem = values.Pop();
-            try { return Calculate(values.Pop(), operators.Pop(), doubleItem); }
-            catch (ArgumentException e) { return new FormulaError(e.Message); }
+            return Calculate(values.Pop(), operators.Pop(), doubleItem);
         }
 
-        // lack operator or number, should not appear
-        else { return new FormulaError("lack operator or number!!!!"); }
     }
 
     /// <summary>
@@ -326,7 +356,7 @@ public class Formula
     /// </summary>
     public override string ToString()
     {
-        return string.Join("",dataOfFormula.ToArray());
+        return string.Join("", dataOfFormula.ToArray());
     }
 
     /// <summary>
@@ -350,7 +380,7 @@ public class Formula
     /// </summary>
     public override bool Equals(object? obj)
     {
-        if (obj == null || typeof(Formula)!.Equals(obj.GetType())) { return false; }
+        if (!(obj is Formula)) { return false; }
         return GetHashCode() == obj.GetHashCode();
     }
 
@@ -379,7 +409,7 @@ public class Formula
     /// </summary>
     public override int GetHashCode()
     {
-        return dataOfFormula.GetHashCode();
+        return ToString().GetHashCode();
     }
 
     /// <summary>
