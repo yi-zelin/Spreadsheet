@@ -153,11 +153,28 @@ public class Formula
     /// <summary>
     /// help method, static for I want to use this in constructor. being used
     /// multiple times, make program easier to read and debug.
-    /// number matches: 3e4, 3E4, 3.4, 34
+    /// number matches: 3e4, 3E4, 3.4, 34, 3.
     /// </summary>
     /// <param name="s">check if s is number or variable</param>
     /// <param name="isValid">isValid function</param>
-    /// <returns>true if s is number or variable</returns>
+    private static bool IsDoubleNum(string s)
+    {
+        try
+        {
+            double.Parse(s);
+            return true;
+        }
+        catch { return false; }
+    }
+
+    /// <summary>
+    /// match possible variable pattern, and check if it's in valid case
+    /// throw FormulaFormatException if it's in variable pattern, but not valid format
+    /// </summary>
+    /// <param name="s"></param>
+    /// <param name="isValid"></param>
+    /// <returns>true if is valid variable, false if it's not an variable</returns>
+    /// <exception cref="FormulaFormatException"></exception>
     private static bool IsValidVar(string s, Func<string, bool> isValid)
     {
         if (Regex.IsMatch(s, @"[a-zA-Z_](?: [a-zA-Z_]|\d)*"))
@@ -168,20 +185,18 @@ public class Formula
         return false;
     }
 
+    /// <summary>
+    /// true if s is number or variable, combine of two methods
+    /// </summary>
+    /// <param name="s"></param>
+    /// <param name="isValid"></param>
+    /// <returns></returns>
     private static bool IsNumOrVar(string s, Func<string, bool> isValid)
     {
         return IsDoubleNum(s) || IsValidVar(s, isValid);
     }
 
-    private static bool IsDoubleNum(string s)
-    {
-        try
-        {
-            double.Parse(s);
-            return true;
-        }
-        catch { return false; }
-    }
+
 
     /// <summary>help method to analyze "+" or "-"</summary>
     private bool IsPlusOrSubt(String s) => s == "+" || s == "-";
