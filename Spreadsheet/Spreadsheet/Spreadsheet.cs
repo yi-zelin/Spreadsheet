@@ -48,8 +48,12 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <exception cref="InvalidNameException"></exception>
     private string ValidName(string s)
     {
-        if (!Regex.IsMatch(s, @"[a-zA-Z_](?: [a-zA-Z_]|\d)*"))
+        Console.WriteLine("validname Run with " + s);
+        // match start with one or more letter or _, then end or then followed
+        // by number till end
+        if (!Regex.IsMatch(s, @"^[a-zA-Z_]+[0-9]*$"))
         {
+            Console.WriteLine("unmatch appear");
             throw new InvalidNameException();
         }
         return s;

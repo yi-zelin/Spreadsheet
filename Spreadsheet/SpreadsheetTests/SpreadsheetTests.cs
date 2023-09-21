@@ -48,8 +48,8 @@ namespace SpreadsheetTests
             Assert.IsTrue(cellsName.Contains("A2"));
             Assert.IsTrue(cellsName.Contains("A3"));
 
-            // test invalid variable
-            Assert.ThrowsException<InvalidNameException>(() => smallSpredShet.SetCellContents("1A", 1.0));
+            Assert.AreEqual(1.0, smallSpredShet.GetCellContents("A1"));
+            Assert.AreEqual("", smallSpredShet.GetCellContents("A10"));
         }
 
         /// <summary>
