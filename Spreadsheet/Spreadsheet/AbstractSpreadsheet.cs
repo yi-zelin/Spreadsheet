@@ -182,18 +182,23 @@ public abstract class AbstractSpreadsheet
     /// </summary>
     private void Visit(string start, string name, ISet<string> visited, LinkedList<string> changed)
     {
+        // add name into visited, then loop item in name's direct dependents
         visited.Add(name);
         foreach (string n in GetDirectDependents(name))
         {
+            // if equal means start directly or indirectly depend to start,
+            // means circular occurs, throw exception
             if (n.Equals(start))
             {
                 throw new CircularException();
             }
+            // if n not visited, visit to check the indirect dependents of start
             else if (!visited.Contains(n))
             {
                 Visit(start, n, visited, changed);
             }
         }
+        // mark as visited, avoid unnecessary code again
         changed.AddFirst(name);
     }
 

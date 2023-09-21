@@ -1,11 +1,25 @@
-﻿using SpreadsheetUtilities;
-using SS;
+﻿// write by Zelin Yi for CS 3500
+// Last updated: September 2023
+
+using SpreadsheetUtilities;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SS;
 
+/// <summary>
+/// empty Cells is not saved in dictionary, for we have infinity much. any valid
+/// name empty cells are exist, with "" as content
+///
+/// dependencyGrapy save the relationship between cells, can use to check if
+/// circular exist
+///
+/// Cell class include content and value field * content: contents of a cell in
+/// Excel is what is displayed on the editing line when the cell is selected,
+/// valid types are string, double, Formula * value: in Excel, is what displayed
+/// on the cells space, so is "" when empty, allowed type are string double or
+/// FormulaError
+///
+/// </summary>
 public class Spreadsheet : AbstractSpreadsheet
 {
     private DependencyGraph dependencyGraph;
@@ -19,7 +33,9 @@ public class Spreadsheet : AbstractSpreadsheet
     /// </summary>
     private class Cell
     {
-        internal readonly Type[] contentTypes = {typeof(string), typeof(double), typeof(Formula)};
+        // don't need name, for name are saved in dictionary, when we get Cell
+        // form dictionary, which means we already have the name
+
         internal object content;
         internal object? value;
 
@@ -33,8 +49,8 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <summary>
     /// constructor to create an empty Spreadsheet
     /// </summary>
-    public Spreadsheet() 
-    { 
+    public Spreadsheet()
+    {
         dependencyGraph = new DependencyGraph();
         cellTable = new Dictionary<string, Cell>();
     }
@@ -48,59 +64,13 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <exception cref="InvalidNameException"></exception>
     private string ValidName(string s)
     {
-        Console.WriteLine("validname Run with " + s);
         // match start with one or more letter or _, then end or then followed
         // by number till end
         if (!Regex.IsMatch(s, @"^[a-zA-Z_]+[0-9]*$"))
         {
-            Console.WriteLine("unmatch appear");
             throw new InvalidNameException();
         }
         return s;
-    }
-
-    /// <summary>
-    /// help method
-    /// keep add directly dependent items into dependToList, until all item in
-    /// the dependToList was accessed, this means all of the directly and
-    /// indirectly dependent items are added in this list.
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    private IList<string> GetDependToList(string name)
-    {
-        // name should already checked validity before calling this help method
-        List<string> dependToList = new List<string> { name };
-        List<string> currentList;
-
-        // for keep add item into dependToList, so value of count is keep growth
-        for (int i = 0; i < dependToList.Count; i++)
-        {
-            // load all dependent for current item
-            currentList = dependencyGraph.GetDependents(dependToList[i]).ToList();
-            // add two list together, once same item occurs, throw exception
-            AddTwoDistinctList(dependToList, currentList);
-        }
-
-        return dependToList;
-    }
-
-    /// <summary>
-    /// help method
-    /// if mainList have same item with branchList, this means one item in
-    /// mainList is directly or indirectly depend on itself, thus a circular
-    /// appeared
-    /// </summary>
-    /// <param name="mainList"></param>
-    /// <param name="branchList"></param>
-    /// <exception cref="CircularException"></exception>
-    private void AddTwoDistinctList(List<string> mainList, List<string> branchList)
-    {
-        foreach (string s in branchList)
-        {
-            if (mainList.Contains(s)) { throw new CircularException(); }
-            mainList.Add(s);
-        }
     }
 
     /// <summary>
@@ -144,18 +114,22 @@ public class Spreadsheet : AbstractSpreadsheet
 
         // only if context is formula might have a not empty dependees list
         if (obj is Formula)
+        {
             dependencyGraph.ReplaceDependees(name, ((Formula)obj).GetVariables());
+            return;
+        }
 
-        // update dependees into empty
+        // else update dependees into empty, and value equal content for double and string
         dependencyGraph.ReplaceDependees(name, new List<string>());
+        cellTable[name].value = obj;
     }
 
     /// <summary>
     /// invalid name throws exception
-    /// 
+    ///
     /// need to update old dependees, for it's number, dependees should be empty
     /// in logic dependent keep same
-    /// 
+    ///
     /// if don't depend on any, return list only contain itself
     /// else return all direct, indirect cell name
     /// </summary>
@@ -165,15 +139,15 @@ public class Spreadsheet : AbstractSpreadsheet
     public override IList<string> SetCellContents(string name, double number)
     {
         SetContents(name, number);
-        return GetDependToList(name);
+        return GetCellsToRecalculate(name).ToList();
     }
 
     /// <summary>
     /// invalid name throws exception
-    /// 
+    ///
     /// need to update old dependees, for it's text, dependees should be empty
     /// in logic dependent keep same
-    /// 
+    ///
     /// if don't depend on any, return list only contain itself
     /// else return all direct, indirect cell name
     /// </summary>
@@ -183,14 +157,14 @@ public class Spreadsheet : AbstractSpreadsheet
     public override IList<string> SetCellContents(string name, string text)
     {
         SetContents(name, text);
-        return GetDependToList(name);
+        return GetCellsToRecalculate(name).ToList();
     }
 
     /// <summary>
     /// invalid name throws exception
-    /// 
+    ///
     /// need to update old dependees
-    /// 
+    ///
     /// if don't depend on any, return list only contain itself
     /// else return all direct, indirect cell name
     /// </summary>
@@ -200,7 +174,7 @@ public class Spreadsheet : AbstractSpreadsheet
     public override IList<string> SetCellContents(string name, Formula formula)
     {
         SetContents(name, formula);
-        return GetDependToList(name);
+        return GetCellsToRecalculate(name).ToList();
     }
 
     /// <summary>
@@ -213,4 +187,3 @@ public class Spreadsheet : AbstractSpreadsheet
         return dependencyGraph.GetDependents(ValidName(name));
     }
 }
-
