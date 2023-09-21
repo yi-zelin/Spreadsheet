@@ -199,7 +199,11 @@ public class Spreadsheet : AbstractSpreadsheet
         return GetDependToList(name);
     }
 
-
+    /// <summary>
+    /// returns direct dependent
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     protected override IEnumerable<string> GetDirectDependents(string name)
     {
         return dependencyGraph.GetDependents(ValidName(name));
