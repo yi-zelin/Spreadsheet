@@ -31,7 +31,7 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <summary>
     /// inner class Cell, store all required fields
     /// </summary>
-    private class Cell
+    internal class Cell
     {
         // don't need name, for name are saved in dictionary, when we get Cell
         // form dictionary, which means we already have the name
@@ -156,6 +156,9 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     public override IList<string> SetCellContents(string name, string text)
     {
+        ValidName(name);
+        if (text == "")
+            return new List<string>();
         SetContents(name, text);
         return GetCellsToRecalculate(name).ToList();
     }
@@ -173,7 +176,37 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     public override IList<string> SetCellContents(string name, Formula formula)
     {
-        SetContents(name, formula);
+        bool exist = cellTable.ContainsKey(ValidName(name));
+        // save cell and relationship before change
+        List<string> dependee = dependencyGraph.GetDependees(name).ToList();
+        List<string> dependent = dependencyGraph.GetDependents(name).ToList();
+        object? content = null;
+        object? value = null;
+        if (exist)
+        {
+            content = cellTable[name].content;
+            value = cellTable[name].value;
+        }
+
+        SetContents(ValidName(name), formula);
+        try
+        {
+            var a = GetCellsToRecalculate(name).ToList();
+        } 
+        catch
+        {
+            if (content != null)
+            {
+                dependencyGraph.ReplaceDependees(ValidName(name), dependee);
+                dependencyGraph.ReplaceDependents(name, dependent);
+                cellTable[name].content = content;
+                cellTable[name].value = value;
+            } else
+            {
+                cellTable.Remove(name);
+            }
+            throw;
+        }
         return GetCellsToRecalculate(name).ToList();
     }
 
@@ -185,5 +218,17 @@ public class Spreadsheet : AbstractSpreadsheet
     protected override IEnumerable<string> GetDirectDependents(string name)
     {
         return dependencyGraph.GetDependents(ValidName(name));
+    }
+
+    /// <summary>
+    /// delete cell form cellTable (set to empty)
+    /// </summary>
+    /// <param name="name"></param>
+    private void removeCell(string name)
+    {
+        // delete relationship
+        dependencyGraph.ReplaceDependees(ValidName(name),new List<string>());
+        dependencyGraph.ReplaceDependents(name,new List<string>());
+        cellTable.Remove(name);
     }
 }
