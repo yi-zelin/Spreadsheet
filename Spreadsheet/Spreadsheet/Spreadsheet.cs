@@ -2,7 +2,12 @@
 // Last updated: September 2023
 
 using SpreadsheetUtilities;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SS;
 
@@ -22,42 +27,206 @@ namespace SS;
 /// </summary>
 public class Spreadsheet : AbstractSpreadsheet
 {
+    private Func<string, bool> isValid;
+    private Func<string, string> normalized;
+
+    // save the relationship of cells
     private DependencyGraph dependencyGraph;
 
-    // this dictionary will not store empty cells, cells not in dictionary means
-    // they are empty
-    private Dictionary<string, Cell> cellTable;
+    // store all cells. dictionary will not store empty cells, cells not in
+    // dictionary means they are empty
+    [JsonInclude]
+    [JsonPropertyName("Cells")]
+    public Dictionary<string, Cell> cellTable;
 
     /// <summary>
     /// inner class Cell, store all required fields
     /// </summary>
-    internal class Cell
+    public class Cell
     {
-        // don't need name, for name are saved in dictionary, when we get Cell
-        // form dictionary, which means we already have the name
-
+        // store the content of cells, can be string, double, Formula
         internal object content;
-        internal object? value;
+        // store the value of cells, can be string double, or FormulaError
+        internal object value;
+
+
+        [JsonInclude]
+        public string stringForm;
+        // if its a double or text, then stringForm = conetnet.tosrting
+        // if its a formula, stringForm = "=" + f.toString();
+
+        [JsonConstructor]
+        public Cell(string stringForm)
+        {
+            value = "";
+            content = "";
+            this.stringForm = stringForm;
+        }
 
         internal Cell(object content)
         {
             this.content = content;
-            value = null;
+            if (content is double)
+            {
+                stringForm = ((double)content).ToString();
+                value = content;
+            }
+            else if (content is string)
+            {
+                stringForm = (string)content;
+                value = content;
+            }
+            else
+            {
+                stringForm = "=" + ((Formula)content).ToString();
+                value = "";
+            }
         }
     }
 
-    /// <summary>
-    /// constructor to create an empty Spreadsheet
-    /// </summary>
-    public Spreadsheet()
+    [JsonConstructor]
+    public Spreadsheet(Dictionary<string, Cell> dict, string version) :
+        this(s => true, s => s, version)
     {
-        dependencyGraph = new DependencyGraph();
-        cellTable = new Dictionary<string, Cell>();
+        // empty
+        if (dict.Count == 0)
+            return;
+        cellTable = dict;
+        List<string> names = cellTable.Keys.ToList();
+        List<Cell> cells = cellTable.Values.ToList();
+        HashSet<string> unknowValues = new HashSet<string>();
+
+        for (int i = 0; i < names.Count; i++)
+        {
+            Cell currentCell = cells[i];
+            string name = names[i];
+
+            // is formula
+            if (currentCell.stringForm.Count() != 0 && currentCell.stringForm[0] == '=')
+            {
+                try
+                {
+                    Formula f = new Formula(currentCell.stringForm.Remove(0, 1));
+                    // is valid formula
+                    currentCell.content = f;
+                    foreach (string item in f.GetVariables())
+                    {
+                        dependencyGraph.AddDependency(item, name);
+                    }
+                    unknowValues.Add(name);
+                }
+                catch { throw new SpreadsheetReadWriteException("invalid formula exist"); }
+            }
+
+            // is double
+            else if (double.TryParse(currentCell.stringForm, out double number))
+            {
+                currentCell.content = number;
+                currentCell.value = number;
+            }
+
+            // is string
+            else
+            {
+                currentCell.content = currentCell.stringForm;
+                currentCell.value = currentCell.stringForm;
+            }
+        }
+        // evaluate value of formula cells
+
     }
 
     /// <summary>
-    /// help method
-    /// if input is valid, return original input, otherwise throw exception
+    /// zero-argument constructor
+    /// </summary>
+    public Spreadsheet() :
+        this(s => true, s => s, "default")
+    {
+    }
+
+    /// <summary>
+    /// three-argument constructor
+    /// </summary>
+    public Spreadsheet(Func<string, bool> isValid, Func<string, string> normalize, string version) :
+        base(version)
+    {
+        this.isValid = isValid;
+        this.normalized = normalize;
+        cellTable = new Dictionary<string, Cell>();
+        dependencyGraph = new DependencyGraph();
+    }
+
+
+    /// <summary>
+    /// four-argument constructor
+    /// </summary>
+    public Spreadsheet(string location, Func<string, bool> isValid, Func<string, string> normalize, string version) :
+        this(isValid, normalize, version)
+    {
+
+    }
+
+    /// <summary>
+    /// help method, to update value of 
+    /// only formula need to update value, for other data won't depend on other cells
+    /// </summary>
+    /// <param name="name"></param>
+    private void UpdateValue(string name)
+    {
+        List<string> recalculate = new List<string>();
+        for (int i = 0; i < recalculate.Count; i++)
+        {
+            foreach (string item in dependencyGraph.GetDependees(recalculate[i]))
+            {
+                if (recalculate.Contains(item))
+                    continue;
+                else
+                    recalculate.Add(item);
+            }
+        }
+        // here, we have a list of all depend to cell name
+
+        foreach (string item in recalculate)
+        {
+            Cell cell = cellTable[item];
+            SetFormulaValue(cell);
+        }
+    }
+
+
+    /// <summary>
+    /// help method, 
+    /// calculate and set the value of cell with formula
+    /// </summary>
+    /// <param name="cell"></param>
+    /// <param name="formula"></param>
+    /// <exception cref="ArgumentException"></exception>
+    private void SetFormulaValue(Cell cell)
+    {
+        cell.value = ((Formula)cell.content).Evaluate((s) =>
+        {
+            // depend on empty cells
+            if (!cellTable.TryGetValue(s, out Cell? temp))
+            {
+                throw new ArgumentException("Formula depend on empty cell");
+            }
+            // value is not empty
+            else if (temp.value is not double)
+            {
+                throw new ArgumentException("Formula depend on a cell without a numerical value");
+            }
+            // value is double
+            else
+            {
+                return (double)temp.value;
+            }
+        });
+    }
+
+
+    /// <summary>
+    /// help method if input is valid and match isValid function, return
+    /// normalized input, otherwise throw exception
     /// </summary>
     /// <param name="s">check s is valid name</param>
     /// <returns></returns>
@@ -66,11 +235,11 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         // match start with one or more letter or _, then end or then followed
         // by number till end
-        if (!Regex.IsMatch(s, @"^[a-zA-Z_]+[0-9]*$"))
+        if (!Regex.IsMatch(s, @"^[a-zA-Z_]+[0-9]*$") || !isValid(s))
         {
             throw new InvalidNameException();
         }
-        return s;
+        return normalized(s);
     }
 
     /// <summary>
@@ -91,37 +260,66 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     public override object GetCellContents(string name)
     {
-        // ValidName() checked validity
-        if (cellTable.ContainsKey(ValidName(name))) { return cellTable[name].content; }
+        // ValidName() check validity and normalize it
+        name = ValidName(name);
+        if (cellTable.ContainsKey(name)) { return cellTable[name].content; }
         return "";
     }
 
+
+    public override IList<string> SetContentsOfCell(string name, string content)
+    {
+        // ValidName() check validity and normalize it
+        name = ValidName(name);
+
+        // won't add empty cell into CellTabel
+        if (content.Length == 0)
+        {
+            if (cellTable.Remove(name))
+            {
+                dependencyGraph.ReplaceDependees(name, new List<string>());
+            }
+            return new List<string>();
+        }
+        else if (double.TryParse(content, out double number))
+        {
+            // content is double
+            return SetCellContents(name, number);
+        }
+        else if (content[0] == '=')
+        {
+            // content is Formula, Formula class will throw exception if its not
+            return SetCellContents(name, new Formula(content.Remove(0, 1), normalized, isValid));
+        }
+        else
+        {
+            // content is string
+            return SetCellContents(name, content);
+        }
+    }
+
+
     /// <summary>
     /// help method
-    /// set contents for cell.
-    /// name check, circular check, dependees update for dependencyGrapy
+    /// set contents for cell. and clear dependees for dependencyGrapy
     /// </summary>
     /// <param name="name"></param>
     /// <param name="obj">only 3 cases: double, string, Formula</param>
-    private void SetContents(string name, object obj)
+    private void SetClearContents(string name, object obj)
     {
-        // cell not exist in dictionary
-        if (!cellTable.ContainsKey(ValidName(name)))
-            cellTable.Add(name, new Cell(obj));
-
-        // here cell exist, then set content
-        cellTable[name].content = obj;
-
-        // only if context is formula might have a not empty dependees list
-        if (obj is Formula)
+        // cell not exist in dictionary, create cell with context and value
+        if (!cellTable.ContainsKey(name)) { cellTable.Add(name, new Cell(obj)); }
+        // cell exist, then set content, value, and update value of cell depend on it
+        else
         {
-            dependencyGraph.ReplaceDependees(name, ((Formula)obj).GetVariables());
-            return;
+            Cell temp = cellTable[name];
+            temp.content = obj;
+            temp.value = obj;
+
         }
 
-        // else update dependees into empty, and value equal content for double and string
+        // set dependees into empty, and value equal content for double and string
         dependencyGraph.ReplaceDependees(name, new List<string>());
-        cellTable[name].value = obj;
     }
 
     /// <summary>
@@ -136,9 +334,9 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <param name="name"></param>
     /// <param name="number"></param>
     /// <returns></returns>
-    public override IList<string> SetCellContents(string name, double number)
+    protected override IList<string> SetCellContents(string name, double number)
     {
-        SetContents(name, number);
+        SetClearContents(name, number);
         return GetCellsToRecalculate(name).ToList();
     }
 
@@ -154,12 +352,9 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <param name="name"></param>
     /// <param name="number"></param>
     /// <returns></returns>
-    public override IList<string> SetCellContents(string name, string text)
+    protected override IList<string> SetCellContents(string name, string text)
     {
-        ValidName(name);
-        if (text == "")
-            return new List<string>();
-        SetContents(name, text);
+        SetClearContents(name, text);
         return GetCellsToRecalculate(name).ToList();
     }
 
@@ -174,41 +369,58 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <param name="name"></param>
     /// <param name="number"></param>
     /// <returns></returns>
-    public override IList<string> SetCellContents(string name, Formula formula)
+    protected override IList<string> SetCellContents(string name, Formula formula)
     {
-        bool exist = cellTable.ContainsKey(ValidName(name));
+        bool exist = cellTable.ContainsKey(name);
         // save cell and relationship before change
         List<string> dependee = dependencyGraph.GetDependees(name).ToList();
         List<string> dependent = dependencyGraph.GetDependents(name).ToList();
         object? content = null;
         object? value = null;
+        // if already exist, save data, else add into cellTable
         if (exist)
         {
             content = cellTable[name].content;
             value = cellTable[name].value;
         }
+        else { cellTable.Add(name, new Cell(formula)); }
 
-        SetContents(ValidName(name), formula);
+        // update dependencyGraph
+        dependencyGraph.ReplaceDependees(name, formula.GetVariables());
+
+        // get ordered list to calculate value, if exist circular, throw
+        // exception and keep spreadsheet unchanged
+        List<string> variableList = new List<string>();
+
+        // exception throws means exist circular, so restore to previous
         try
         {
-            var a = GetCellsToRecalculate(name).ToList();
-        } 
+            variableList = GetCellsToRecalculate(name).ToList();
+        }
         catch
         {
-            if (content != null)
+            if (content != null && value != null)
             {
-                dependencyGraph.ReplaceDependees(ValidName(name), dependee);
+                dependencyGraph.ReplaceDependees(name, dependee);
                 dependencyGraph.ReplaceDependents(name, dependent);
                 cellTable[name].content = content;
                 cellTable[name].value = value;
-            } else
+            }
+            else
             {
                 cellTable.Remove(name);
             }
             throw;
         }
-        return GetCellsToRecalculate(name).ToList();
+        // only when no exception throws would reach here
+
+        Cell cell = cellTable[name];
+        SetFormulaValue(cell);
+        // Evaluate will handle exception into FormulaError
+        return variableList;
     }
+
+
 
     /// <summary>
     /// returns direct dependent
@@ -220,15 +432,31 @@ public class Spreadsheet : AbstractSpreadsheet
         return dependencyGraph.GetDependents(ValidName(name));
     }
 
+
+    public override void Save(string filename)
+    {
+        try
+        {
+            string jsonString = JsonSerializer.Serialize(this);
+            File.WriteAllText(filename, jsonString);
+        }
+        catch
+        {
+            throw;
+            //throw new SpreadsheetReadWriteException("incorrect location / fileName");
+        }
+    }
+
     /// <summary>
-    /// delete cell form cellTable (set to empty)
+    /// return the value of cell, if it's empty cell, return "";
     /// </summary>
     /// <param name="name"></param>
-    private void removeCell(string name)
+    /// <returns></returns>
+    public override object GetCellValue(string name)
     {
-        // delete relationship
-        dependencyGraph.ReplaceDependees(ValidName(name),new List<string>());
-        dependencyGraph.ReplaceDependents(name,new List<string>());
-        cellTable.Remove(name);
+        if (cellTable.TryGetValue(ValidName(name), out Cell? cell))
+            return cellTable[ValidName(name)].value;
+        else
+            return "";
     }
 }
