@@ -127,7 +127,7 @@ public class Spreadsheet : AbstractSpreadsheet
             string s = File.ReadAllText(location);
             Spreadsheet? ss = JsonSerializer.Deserialize<Spreadsheet>(s);
 
-            if (ss.Version != this.Version)
+            if (ss is null || ss.Version != this.Version)
             {
                 throw new Exception();
             }
