@@ -2,12 +2,9 @@
 // Last updated: September 2023
 
 using SpreadsheetUtilities;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SS;
 
@@ -27,14 +24,18 @@ namespace SS;
 /// </summary>
 public class Spreadsheet : AbstractSpreadsheet
 {
+    // define the input and return type for isValid and normalized function
+    // isValid return bool of if input is valid
     private Func<string, bool> isValid;
+
+    // return normalized string of input
     private Func<string, string> normalized;
 
     // save the relationship of cells
     private DependencyGraph dependencyGraph;
 
     // store all cells. dictionary will not store empty cells, cells not in
-     //dictionary means they are empty
+    //dictionary means they are empty
     [JsonInclude]
     public Dictionary<string, Cell> Cells;
 
@@ -45,15 +46,16 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         // store the content of cells, can be string, double, Formula
         internal object content;
+
         // store the value of cells, can be string double, or FormulaError
         internal object value;
 
-
+        // string form of content, Json serialize and deserialize will use
         [JsonInclude]
         public string stringForm;
+
         // if its a double or text, then stringForm = conetnet.tosrting
         // if its a formula, stringForm = "=" + f.toString();
-
         [JsonConstructor]
         public Cell(string stringForm)
         {
@@ -62,6 +64,7 @@ public class Spreadsheet : AbstractSpreadsheet
             this.stringForm = stringForm;
         }
 
+        // used when create cell, not use with json
         internal Cell(object content)
         {
             this.content = content;
@@ -83,6 +86,7 @@ public class Spreadsheet : AbstractSpreadsheet
         }
     }
 
+    // load dictionary and set version for json deserialize
     [JsonConstructor]
     public Spreadsheet(Dictionary<string, Cell> Cells, string version) :
     this(s => true, s => s, version)
@@ -91,7 +95,7 @@ public class Spreadsheet : AbstractSpreadsheet
     }
 
     /// <summary>
-    /// zero-argument constructor
+    /// zero-argument constructor, version is default, isValid and normalize function will do nothing
     /// </summary>
     public Spreadsheet() :
         this(s => true, s => s, "default")
@@ -99,7 +103,7 @@ public class Spreadsheet : AbstractSpreadsheet
     }
 
     /// <summary>
-    /// three-argument constructor
+    /// three-argument constructor, set version, isValid and normalize function
     /// </summary>
     public Spreadsheet(Func<string, bool> isValid, Func<string, string> normalize, string version) :
         base(version)
@@ -111,9 +115,9 @@ public class Spreadsheet : AbstractSpreadsheet
         dependencyGraph = new DependencyGraph();
     }
 
-
     /// <summary>
-    /// four-argument constructor
+    /// four-argument constructor, this will call JsonSerializer.Deserialize,
+    /// use to load Spreadsheet from file
     /// </summary>
     public Spreadsheet(string location, Func<string, bool> isValid, Func<string, string> normalize, string version) :
         this(isValid, normalize, version)
@@ -123,26 +127,24 @@ public class Spreadsheet : AbstractSpreadsheet
             string s = File.ReadAllText(location);
             Spreadsheet? ss = JsonSerializer.Deserialize<Spreadsheet>(s);
 
-            if (ss is null || ss.Version != this.Version)
+            if (ss.Version != this.Version)
             {
                 throw new Exception();
             }
 
-            foreach(var v in ss.Cells)
+            foreach (var v in ss.Cells)
             {
                 this.SetContentsOfCell(v.Key, v.Value.stringForm);
             }
-
-        } catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             throw new SpreadsheetReadWriteException(ex.Message);
         }
-
     }
 
-
     /// <summary>
-    /// help method, 
+    /// help method,
     /// calculate and set the value of cell with formula
     /// </summary>
     /// <param name="cell"></param>
@@ -171,7 +173,6 @@ public class Spreadsheet : AbstractSpreadsheet
             return (double)(temp.value);
         }
     }
-
 
     /// <summary>
     /// help method if input is valid and match isValid function, return
@@ -215,7 +216,14 @@ public class Spreadsheet : AbstractSpreadsheet
         return "";
     }
 
-
+    /// <summary>
+    /// determine which set method it will call, and update value of cells
+    /// before return the list of name plus the names of all other cells whose
+    /// value depends, directly or indirectly, on the named cell
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="content"></param>
+    /// <returns></returns>
     public override IList<string> SetContentsOfCell(string name, string content)
     {
         // ValidName() check validity and normalize it
@@ -247,19 +255,18 @@ public class Spreadsheet : AbstractSpreadsheet
             temp = SetCellContents(name, content).ToList();
         }
 
+        // update value of cells
         Cells[name].stringForm = content;
 
         foreach (string s in temp)
         {
-            if (Cells.ContainsKey(s) && Cells[s].content is Formula)
+            if (Cells[s].content is Formula)
             {
                 SetFormulaValue(Cells[s]);
             }
         }
         return temp;
-
     }
-
 
     /// <summary>
     /// help method
@@ -277,7 +284,6 @@ public class Spreadsheet : AbstractSpreadsheet
             Cell temp = Cells[name];
             temp.content = obj;
             temp.value = obj;
-
         }
 
         // set dependees into empty, and value equal content for double and string
@@ -383,8 +389,6 @@ public class Spreadsheet : AbstractSpreadsheet
         return variableList;
     }
 
-
-
     /// <summary>
     /// returns direct dependent
     /// </summary>
@@ -395,13 +399,17 @@ public class Spreadsheet : AbstractSpreadsheet
         return dependencyGraph.GetDependents(ValidName(name));
     }
 
-
+    /// <summary>
+    /// save .txt file into filename with Json rule
+    /// </summary>
+    /// <param name="filename"></param>
+    /// <exception cref="SpreadsheetReadWriteException"> throws when illegal location or file name</exception>
     public override void Save(string filename)
     {
         try
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(this,options);
+            string jsonString = JsonSerializer.Serialize(this, options);
             File.WriteAllText(filename, jsonString);
         }
         catch

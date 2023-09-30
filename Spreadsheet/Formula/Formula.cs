@@ -275,7 +275,7 @@ public class Formula
                         return new FormulaError(e.Message);
                     }
                 }
-                else { doubleItem = int.Parse(item); }
+                else { doubleItem = double.Parse(item); }
 
                 // operator stack is not empty and '*' or '/' is at the top of the operator stack
                 if (operators.Count != 0 && IsMulOrDiv(operators.Peek()))
