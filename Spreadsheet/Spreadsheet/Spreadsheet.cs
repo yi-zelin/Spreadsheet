@@ -61,6 +61,7 @@ public class Spreadsheet : AbstractSpreadsheet
             value = "";
             content = "";
             this.stringForm = stringForm;
+
         }
 
         internal Cell(object content)
@@ -88,52 +89,23 @@ public class Spreadsheet : AbstractSpreadsheet
     public Spreadsheet(Dictionary<string, Cell> dict, string version) :
         this(s => true, s => s, version)
     {
-        // empty
-        if (dict.Count == 0)
-            return;
-        cellTable = dict;
-        List<string> names = cellTable.Keys.ToList();
-        List<Cell> cells = cellTable.Values.ToList();
-        HashSet<string> unknowValues = new HashSet<string>();
-
+        List<string> names = dict.Keys.ToList();
+        List<Cell> input = dict.Values.ToList();
         for (int i = 0; i < names.Count; i++)
         {
-            Cell currentCell = cells[i];
-            string name = names[i];
-
-            // is formula
-            if (currentCell.stringForm.Count() != 0 && currentCell.stringForm[0] == '=')
+            try
             {
-                try
-                {
-                    Formula f = new Formula(currentCell.stringForm.Remove(0, 1));
-                    // is valid formula
-                    currentCell.content = f;
-                    foreach (string item in f.GetVariables())
-                    {
-                        dependencyGraph.AddDependency(item, name);
-                    }
-                    unknowValues.Add(name);
-                }
-                catch { throw new SpreadsheetReadWriteException("invalid formula exist"); }
+                SetContentsOfCell(names[i], input[i].stringForm);
             }
-
-            // is double
-            else if (double.TryParse(currentCell.stringForm, out double number))
+            catch (Exception e)
             {
-                currentCell.content = number;
-                currentCell.value = number;
-            }
+                if (e is CircularException)
+                    throw new SpreadsheetReadWriteException("circular exist");
+                else if (e is InvalidNameException)
+                    throw new SpreadsheetReadWriteException("invalid name exist");
 
-            // is string
-            else
-            {
-                currentCell.content = currentCell.stringForm;
-                currentCell.value = currentCell.stringForm;
             }
         }
-        // evaluate value of formula cells
-
     }
 
     /// <summary>
@@ -150,6 +122,7 @@ public class Spreadsheet : AbstractSpreadsheet
     public Spreadsheet(Func<string, bool> isValid, Func<string, string> normalize, string version) :
         base(version)
     {
+        Changed = false;
         this.isValid = isValid;
         this.normalized = normalize;
         cellTable = new Dictionary<string, Cell>();
@@ -163,34 +136,20 @@ public class Spreadsheet : AbstractSpreadsheet
     public Spreadsheet(string location, Func<string, bool> isValid, Func<string, string> normalize, string version) :
         this(isValid, normalize, version)
     {
+        // location check
+        if (!File.Exists(location))
+            throw new SpreadsheetReadWriteException("file does not exist");
 
-    }
+        Spreadsheet? temp = JsonSerializer.Deserialize<Spreadsheet>(location);
 
-    /// <summary>
-    /// help method, to update value of 
-    /// only formula need to update value, for other data won't depend on other cells
-    /// </summary>
-    /// <param name="name"></param>
-    private void UpdateValue(string name)
-    {
-        List<string> recalculate = new List<string>();
-        for (int i = 0; i < recalculate.Count; i++)
-        {
-            foreach (string item in dependencyGraph.GetDependees(recalculate[i]))
-            {
-                if (recalculate.Contains(item))
-                    continue;
-                else
-                    recalculate.Add(item);
-            }
-        }
-        // here, we have a list of all depend to cell name
+        if (temp.Version != version)
+            throw new SpreadsheetReadWriteException("version not match");
 
-        foreach (string item in recalculate)
-        {
-            Cell cell = cellTable[item];
-            SetFormulaValue(cell);
-        }
+        if (temp == null)
+            throw new SpreadsheetReadWriteException("fill is empty");
+
+        cellTable = temp.cellTable;
+        dependencyGraph = temp.dependencyGraph;
     }
 
 
@@ -203,24 +162,26 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <exception cref="ArgumentException"></exception>
     private void SetFormulaValue(Cell cell)
     {
-        cell.value = ((Formula)cell.content).Evaluate((s) =>
+        cell.value = ((Formula)cell.content).Evaluate(LookUp);
+    }
+
+    private double LookUp(string s)
+    {
+        // depend on empty cells
+        if (!cellTable.TryGetValue(s, out Cell? temp))
         {
-            // depend on empty cells
-            if (!cellTable.TryGetValue(s, out Cell? temp))
-            {
-                throw new ArgumentException("Formula depend on empty cell");
-            }
-            // value is not empty
-            else if (temp.value is not double)
-            {
-                throw new ArgumentException("Formula depend on a cell without a numerical value");
-            }
-            // value is double
-            else
-            {
-                return (double)temp.value;
-            }
-        });
+            throw new ArgumentException("Formula depend on empty cell");
+        }
+        // value is not empty
+        else if (temp.value is not double)
+        {
+            throw new ArgumentException("Formula depend on a cell without a numerical value");
+        }
+        // value is double
+        else
+        {
+            return (double)(temp.value);
+        }
     }
 
 
@@ -271,7 +232,8 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         // ValidName() check validity and normalize it
         name = ValidName(name);
-
+        Changed = true;
+        List<string> temp = new List<string>();
         // won't add empty cell into CellTabel
         if (content.Length == 0)
         {
@@ -284,18 +246,30 @@ public class Spreadsheet : AbstractSpreadsheet
         else if (double.TryParse(content, out double number))
         {
             // content is double
-            return SetCellContents(name, number);
+            temp = SetCellContents(name, number).ToList();
         }
         else if (content[0] == '=')
         {
             // content is Formula, Formula class will throw exception if its not
-            return SetCellContents(name, new Formula(content.Remove(0, 1), normalized, isValid));
+            temp = SetCellContents(name, new Formula(content.Remove(0, 1), normalized, isValid)).ToList();
         }
         else
         {
             // content is string
-            return SetCellContents(name, content);
+            temp = SetCellContents(name, content).ToList();
         }
+
+        cellTable[name].stringForm = content;
+
+        foreach (string s in temp)
+        {
+            if (cellTable.ContainsKey(s) && cellTable[s].content is Formula)
+            {
+                SetFormulaValue(cellTable[s]);
+            }
+        }
+        return temp;
+
     }
 
 
@@ -382,6 +356,7 @@ public class Spreadsheet : AbstractSpreadsheet
         {
             content = cellTable[name].content;
             value = cellTable[name].value;
+            cellTable[name].content = formula;
         }
         else { cellTable.Add(name, new Cell(formula)); }
 
@@ -437,13 +412,13 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         try
         {
-            string jsonString = JsonSerializer.Serialize(this);
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            string jsonString = JsonSerializer.Serialize(this, options);
             File.WriteAllText(filename, jsonString);
         }
         catch
         {
-            throw;
-            //throw new SpreadsheetReadWriteException("incorrect location / fileName");
+            throw new SpreadsheetReadWriteException("incorrect location / fileName");
         }
     }
 
