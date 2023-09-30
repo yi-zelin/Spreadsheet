@@ -34,10 +34,9 @@ public class Spreadsheet : AbstractSpreadsheet
     private DependencyGraph dependencyGraph;
 
     // store all cells. dictionary will not store empty cells, cells not in
-    // dictionary means they are empty
+     //dictionary means they are empty
     [JsonInclude]
-    [JsonPropertyName("Cells")]
-    public Dictionary<string, Cell> cellTable;
+    public Dictionary<string, Cell> Cells;
 
     /// <summary>
     /// inner class Cell, store all required fields
@@ -61,7 +60,6 @@ public class Spreadsheet : AbstractSpreadsheet
             value = "";
             content = "";
             this.stringForm = stringForm;
-
         }
 
         internal Cell(object content)
@@ -86,26 +84,10 @@ public class Spreadsheet : AbstractSpreadsheet
     }
 
     [JsonConstructor]
-    public Spreadsheet(Dictionary<string, Cell> dict, string version) :
-        this(s => true, s => s, version)
+    public Spreadsheet(Dictionary<string, Cell> Cells, string version) :
+    this(s => true, s => s, version)
     {
-        List<string> names = dict.Keys.ToList();
-        List<Cell> input = dict.Values.ToList();
-        for (int i = 0; i < names.Count; i++)
-        {
-            try
-            {
-                SetContentsOfCell(names[i], input[i].stringForm);
-            }
-            catch (Exception e)
-            {
-                if (e is CircularException)
-                    throw new SpreadsheetReadWriteException("circular exist");
-                else if (e is InvalidNameException)
-                    throw new SpreadsheetReadWriteException("invalid name exist");
-
-            }
-        }
+        this.Cells = Cells;
     }
 
     /// <summary>
@@ -125,7 +107,7 @@ public class Spreadsheet : AbstractSpreadsheet
         Changed = false;
         this.isValid = isValid;
         this.normalized = normalize;
-        cellTable = new Dictionary<string, Cell>();
+        Cells = new Dictionary<string, Cell>();
         dependencyGraph = new DependencyGraph();
     }
 
@@ -136,20 +118,26 @@ public class Spreadsheet : AbstractSpreadsheet
     public Spreadsheet(string location, Func<string, bool> isValid, Func<string, string> normalize, string version) :
         this(isValid, normalize, version)
     {
-        // location check
-        if (!File.Exists(location))
-            throw new SpreadsheetReadWriteException("file does not exist");
+        try
+        {
+            string s = File.ReadAllText(location);
+            Spreadsheet? ss = JsonSerializer.Deserialize<Spreadsheet>(s);
 
-        Spreadsheet? temp = JsonSerializer.Deserialize<Spreadsheet>(location);
+            if (ss is null || ss.Version != this.Version)
+            {
+                throw new Exception();
+            }
 
-        if (temp.Version != version)
-            throw new SpreadsheetReadWriteException("version not match");
+            foreach(var v in ss.Cells)
+            {
+                this.SetContentsOfCell(v.Key, v.Value.stringForm);
+            }
 
-        if (temp == null)
-            throw new SpreadsheetReadWriteException("fill is empty");
+        } catch (Exception ex) 
+        {
+            throw new SpreadsheetReadWriteException(ex.Message);
+        }
 
-        cellTable = temp.cellTable;
-        dependencyGraph = temp.dependencyGraph;
     }
 
 
@@ -168,7 +156,7 @@ public class Spreadsheet : AbstractSpreadsheet
     private double LookUp(string s)
     {
         // depend on empty cells
-        if (!cellTable.TryGetValue(s, out Cell? temp))
+        if (!Cells.TryGetValue(s, out Cell? temp))
         {
             throw new ArgumentException("Formula depend on empty cell");
         }
@@ -209,7 +197,7 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     public override IEnumerable<string> GetNamesOfAllNonemptyCells()
     {
-        return cellTable.Keys.ToArray();
+        return Cells.Keys.ToArray();
     }
 
     /// <summary>
@@ -223,7 +211,7 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         // ValidName() check validity and normalize it
         name = ValidName(name);
-        if (cellTable.ContainsKey(name)) { return cellTable[name].content; }
+        if (Cells.ContainsKey(name)) { return Cells[name].content; }
         return "";
     }
 
@@ -237,7 +225,7 @@ public class Spreadsheet : AbstractSpreadsheet
         // won't add empty cell into CellTabel
         if (content.Length == 0)
         {
-            if (cellTable.Remove(name))
+            if (Cells.Remove(name))
             {
                 dependencyGraph.ReplaceDependees(name, new List<string>());
             }
@@ -259,13 +247,13 @@ public class Spreadsheet : AbstractSpreadsheet
             temp = SetCellContents(name, content).ToList();
         }
 
-        cellTable[name].stringForm = content;
+        Cells[name].stringForm = content;
 
         foreach (string s in temp)
         {
-            if (cellTable.ContainsKey(s) && cellTable[s].content is Formula)
+            if (Cells.ContainsKey(s) && Cells[s].content is Formula)
             {
-                SetFormulaValue(cellTable[s]);
+                SetFormulaValue(Cells[s]);
             }
         }
         return temp;
@@ -282,11 +270,11 @@ public class Spreadsheet : AbstractSpreadsheet
     private void SetClearContents(string name, object obj)
     {
         // cell not exist in dictionary, create cell with context and value
-        if (!cellTable.ContainsKey(name)) { cellTable.Add(name, new Cell(obj)); }
+        if (!Cells.ContainsKey(name)) { Cells.Add(name, new Cell(obj)); }
         // cell exist, then set content, value, and update value of cell depend on it
         else
         {
-            Cell temp = cellTable[name];
+            Cell temp = Cells[name];
             temp.content = obj;
             temp.value = obj;
 
@@ -345,20 +333,20 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     protected override IList<string> SetCellContents(string name, Formula formula)
     {
-        bool exist = cellTable.ContainsKey(name);
+        bool exist = Cells.ContainsKey(name);
         // save cell and relationship before change
         List<string> dependee = dependencyGraph.GetDependees(name).ToList();
         List<string> dependent = dependencyGraph.GetDependents(name).ToList();
         object? content = null;
         object? value = null;
-        // if already exist, save data, else add into cellTable
+        // if already exist, save data, else add into Cells
         if (exist)
         {
-            content = cellTable[name].content;
-            value = cellTable[name].value;
-            cellTable[name].content = formula;
+            content = Cells[name].content;
+            value = Cells[name].value;
+            Cells[name].content = formula;
         }
-        else { cellTable.Add(name, new Cell(formula)); }
+        else { Cells.Add(name, new Cell(formula)); }
 
         // update dependencyGraph
         dependencyGraph.ReplaceDependees(name, formula.GetVariables());
@@ -378,18 +366,18 @@ public class Spreadsheet : AbstractSpreadsheet
             {
                 dependencyGraph.ReplaceDependees(name, dependee);
                 dependencyGraph.ReplaceDependents(name, dependent);
-                cellTable[name].content = content;
-                cellTable[name].value = value;
+                Cells[name].content = content;
+                Cells[name].value = value;
             }
             else
             {
-                cellTable.Remove(name);
+                Cells.Remove(name);
             }
             throw;
         }
         // only when no exception throws would reach here
 
-        Cell cell = cellTable[name];
+        Cell cell = Cells[name];
         SetFormulaValue(cell);
         // Evaluate will handle exception into FormulaError
         return variableList;
@@ -413,7 +401,7 @@ public class Spreadsheet : AbstractSpreadsheet
         try
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(this, options);
+            string jsonString = JsonSerializer.Serialize(this,options);
             File.WriteAllText(filename, jsonString);
         }
         catch
@@ -429,8 +417,8 @@ public class Spreadsheet : AbstractSpreadsheet
     /// <returns></returns>
     public override object GetCellValue(string name)
     {
-        if (cellTable.TryGetValue(ValidName(name), out Cell? cell))
-            return cellTable[ValidName(name)].value;
+        if (Cells.TryGetValue(ValidName(name), out Cell? cell))
+            return Cells[ValidName(name)].value;
         else
             return "";
     }
