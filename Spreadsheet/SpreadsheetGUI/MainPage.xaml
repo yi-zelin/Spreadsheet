@@ -9,24 +9,34 @@
             <MenuFlyoutItem Text="Open" Clicked="OpenClicked" />
         </MenuBarItem>
     </ContentPage.MenuBarItems>
-    <VerticalStackLayout>
-        <HorizontalStackLayout BackgroundColor="Gainsboro"
-                               Spacing="10">
+    
+    <Grid RowDefinitions="48, *">
+        <HorizontalStackLayout BackgroundColor="Gainsboro">
             <Entry x:Name="cellName"
-                   Text="Name"
+                   Text=""
+                   ToolTipProperties.Text="Name"
+                   Placeholder="Name"
                    BackgroundColor="WhiteSmoke"
-                   IsReadOnly="True"/>
+                   IsReadOnly="True"
+                   Margin="5"/>
             <Entry x:Name="cellValue"
+                   Text=""
+                   ToolTipProperties.Text="Value"
+                   Placeholder="Value"
                    BackgroundColor="WhiteSmoke"
-                   Text="Value"
-                   IsReadOnly="True"/>
+                   IsReadOnly="True"
+                   Margin="5"/>
             <Entry x:Name="cellContent"
-                   Text="Content"
-                   BackgroundColor="WhiteSmoke"/>
+                   Text=""
+                   ToolTipProperties.Text="Content"
+                   Placeholder="Content"
+                   BackgroundColor="WhiteSmoke"
+                   Margin="5"
+                   WidthRequest="150"/>
         </HorizontalStackLayout>
-        <Grid>
-            <SS:SpreadsheetGrid x:Name="spreadsheetGrid" />
-        </Grid>
-    </VerticalStackLayout>
+
+        <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
+                                Grid.Row="1"/>
+    </Grid>
 </ContentPage>
 
