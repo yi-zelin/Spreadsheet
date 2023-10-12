@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpreadsheetTests", "Spreads
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpreadsheetGUI", "SpreadsheetGUI\SpreadsheetGUI.csproj", "{32CAA59C-8F03-4C0E-B66B-61352ADB60FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIFunctionTest", "UIFunctionTest\UIFunctionTest.csproj", "{7DA49827-0A3E-479B-8FF1-155AD23D8490}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,12 @@ Global
 		{32CAA59C-8F03-4C0E-B66B-61352ADB60FA}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{32CAA59C-8F03-4C0E-B66B-61352ADB60FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32CAA59C-8F03-4C0E-B66B-61352ADB60FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DA49827-0A3E-479B-8FF1-155AD23D8490}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
