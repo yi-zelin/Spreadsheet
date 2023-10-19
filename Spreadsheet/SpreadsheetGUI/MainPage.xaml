@@ -28,6 +28,8 @@
                    Margin="5"/>
             <Entry x:Name="cellContent"
                    Text=""
+                   Completed="setContent"
+                   
                    ToolTipProperties.Text="Content"
                    Placeholder="Content"
                    BackgroundColor="WhiteSmoke"
@@ -36,7 +38,7 @@
         </HorizontalStackLayout>
 
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
-                                Grid.Row="1"/>
+                            Grid.Row="1"/>
     </Grid>
 </ContentPage>
 

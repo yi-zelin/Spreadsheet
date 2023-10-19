@@ -125,6 +125,7 @@ namespace SpreadsheetTests
             testSpredShet.SetContentsOfCell("A1", "= B1");
             testSpredShet.SetContentsOfCell("B1", "= C1");
             testSpredShet.SetContentsOfCell("C1", "= D1");
+            Console.WriteLine(testSpredShet.Cells["A1"].stringForm);
             Assert.ThrowsException<CircularException>(() => testSpredShet.SetContentsOfCell("D1", "= A1"));
         }
 

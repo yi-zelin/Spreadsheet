@@ -2,6 +2,7 @@
 // Last updated: September 2023
 
 using SpreadsheetUtilities;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -48,7 +49,7 @@ public class Spreadsheet : AbstractSpreadsheet
         internal object content;
 
         // store the value of cells, can be string double, or FormulaError
-        internal object value;
+        public object value;
 
         // string form of content, Json serialize and deserialize will use
         [JsonInclude]
@@ -257,6 +258,7 @@ public class Spreadsheet : AbstractSpreadsheet
 
         // update value of cells
         Cells[name].stringForm = content;
+        Debug.WriteLine("Setcellcontent " + content);
 
         foreach (string s in temp)
         {

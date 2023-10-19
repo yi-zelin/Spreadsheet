@@ -2,6 +2,10 @@
 using Font = Microsoft.Maui.Graphics.Font;
 using SizeF = Microsoft.Maui.Graphics.SizeF;
 using PointF = Microsoft.Maui.Graphics.PointF;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Media.AppBroadcasting;
 
 namespace SS;
 
@@ -44,6 +48,7 @@ public class SpreadsheetGrid : ScrollView, IDrawable, ISpreadsheetGrid
 
     // The strings contained by this grid
     private Dictionary<Address, String> _values = new();
+    private Spreadsheet _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s =>s.ToUpper(), "ps6");
 
     // GraphicsView maintains the actual drawing of the grid and listens
     // for click events
@@ -68,6 +73,30 @@ public class SpreadsheetGrid : ScrollView, IDrawable, ISpreadsheetGrid
         Invalidate();
     }
 
+    public string GetCurrentContent()
+    {
+        //return _data.GetCellContents(AddrToVar(_selectedCol, _selectedRow)).ToString();
+        if (!_data.Cells.TryGetValue(AddrToVar(_selectedCol, _selectedRow), out Spreadsheet.Cell cell))
+            return "";
+        return cell.stringForm;
+    }
+
+    private string AddrToVar(int col, int row)
+    {
+        return ((char)(col + 65)).ToString() + (row);
+    }
+
+    private int[] VarToAddr(string s)
+    {
+        //Debug.WriteLine(s);
+        //Debug.WriteLine(((int)s[0]) - 65);
+        //Debug.WriteLine(int.Parse(s.Substring(1)));
+        int[] i = new int[2];
+        i[0] = (((int)s[0]) - 65);
+        i[1] = (int.Parse(s.Substring(1)));
+        return i;
+    }
+
     public bool SetValue(int col, int row, string c)
     {
         if (InvalidAddress(col, row))
@@ -75,6 +104,8 @@ public class SpreadsheetGrid : ScrollView, IDrawable, ISpreadsheetGrid
             return false;
         }
         Address a = new Address(col, row);
+        _data.SetContentsOfCell(AddrToVar(col,row),c);
+
         if (c == "")
         {
             _values.Remove(a);
@@ -94,10 +125,7 @@ public class SpreadsheetGrid : ScrollView, IDrawable, ISpreadsheetGrid
             c = "";
             return false;
         }
-        if (!_values.TryGetValue(new Address(col, row), out c))
-        {
-            c = "";
-        }
+        c = _data.GetCellValue(AddrToVar(col, row)).ToString();
         return true;
     }
 
@@ -261,11 +289,13 @@ public class SpreadsheetGrid : ScrollView, IDrawable, ISpreadsheetGrid
         }
 
         // Draw the text
-        foreach (KeyValuePair<Address, String> address in _values)
+        foreach (KeyValuePair<string, Spreadsheet.Cell> s in _data.Cells)
         {
-            String text = address.Value;
-            int col = address.Key.Col - _firstColumn;
-            int row = address.Key.Row - _firstRow;
+            String text = s.Value.value.ToString();
+
+            int[] i = VarToAddr(s.Key);
+            int col = i[0] - _firstColumn;
+            int row = i[1] - _firstRow;
             SizeF size = canvas.GetStringSize(text, Font.Default, FONT_SIZE + FONT_SIZE * 1.75f);
             canvas.Font = Font.Default;
             if (col >= 0 && row >= 0)

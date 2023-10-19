@@ -1,4 +1,5 @@
 ﻿using SS;
+using System.Diagnostics;
 
 namespace SpreadsheetGUI;
 
@@ -7,6 +8,8 @@ namespace SpreadsheetGUI;
 /// </summary>
 public partial class MainPage : ContentPage
 {
+    // easier to update, for column in PS6 is only from A to Z, if need more in future, just update this
+    Func<int, string> getCol;
 
     /// <summary>
     /// Constructor for the demo
@@ -22,18 +25,30 @@ public partial class MainPage : ContentPage
         // register the displaySelection method below.
         spreadsheetGrid.SelectionChanged += displaySelection;
         spreadsheetGrid.SetSelection(2, 3);
+        getCol = (col) => ((char)(col + 65)).ToString();
+    }
+
+    private void setContent(Object sender, EventArgs e)
+    {
+        spreadsheetGrid.GetSelection(out int col, out int row);
+        Debug.WriteLine("Setcontent: " + cellContent.Text);
+        spreadsheetGrid.SetValue(col, row, cellContent.Text);
+        spreadsheetGrid.GetValue(col, row, out string value);
+        cellValue.Text = value;
     }
 
     private void displaySelection(ISpreadsheetGrid grid)
     {
         spreadsheetGrid.GetSelection(out int col, out int row);
+        // set name
+        cellName.Text = getCol(col) + (row+1);
         spreadsheetGrid.GetValue(col, row, out string value);
-        if (value == "")
-        {
-            spreadsheetGrid.SetValue(col, row, DateTime.Now.ToLocalTime().ToString("T"));
-            spreadsheetGrid.GetValue(col, row, out value);
-            DisplayAlert("Selection:", "column " + col + " row " + row + " value " + value, "OK");
-        }
+
+        spreadsheetGrid.SetValue(col,row, value);
+
+        cellValue.Text = value;
+        cellContent.Text = spreadsheetGrid.GetCurrentContent();
+        //cellContent.Text = "=hahah";
     }
 
     private void NewClicked(Object sender, EventArgs e)
@@ -70,5 +85,10 @@ public partial class MainPage : ContentPage
             Console.WriteLine("Error opening file:");
             Console.WriteLine(ex);
         }
+    }
+
+    private void cellContent_Completed(object sender, EventArgs e)
+    {
+
     }
 }
