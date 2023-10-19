@@ -28,7 +28,7 @@
                    Margin="5"/>
             <Entry x:Name="cellContent"
                    Text=""
-                   Completed="setContent"
+                   Completed="finishInput"
                    
                    ToolTipProperties.Text="Content"
                    Placeholder="Content"

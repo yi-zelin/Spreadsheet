@@ -1,5 +1,6 @@
-﻿using SS;
-using System.Diagnostics;
+﻿using Microsoft.Maui.Controls;
+using SS;
+using System.Text.RegularExpressions;
 
 namespace SpreadsheetGUI;
 
@@ -8,9 +9,7 @@ namespace SpreadsheetGUI;
 /// </summary>
 public partial class MainPage : ContentPage
 {
-    // easier to update, for column in PS6 is only from A to Z, if need more in future, just update this
-    Func<int, string> getCol;
-
+    private Spreadsheet _data;
     /// <summary>
     /// Constructor for the demo
     /// </summary>
@@ -25,35 +24,77 @@ public partial class MainPage : ContentPage
         // register the displaySelection method below.
         spreadsheetGrid.SelectionChanged += displaySelection;
         spreadsheetGrid.SetSelection(2, 3);
-        getCol = (col) => ((char)(col + 65)).ToString();
+        cellName.Text = AddrToVar(2, 3);
+        _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
-    private void setContent(Object sender, EventArgs e)
-    {
-        spreadsheetGrid.GetSelection(out int col, out int row);
-        Debug.WriteLine("Setcontent: " + cellContent.Text);
-        spreadsheetGrid.SetValue(col, row, cellContent.Text);
-        spreadsheetGrid.GetValue(col, row, out string value);
-        cellValue.Text = value;
-    }
-
+    /// <summary>
+    /// emphasize current selected cell, and set cal and row
+    /// </summary>
+    /// <param name="grid"></param>
     private void displaySelection(ISpreadsheetGrid grid)
     {
         spreadsheetGrid.GetSelection(out int col, out int row);
-        // set name
-        cellName.Text = getCol(col) + (row+1);
         spreadsheetGrid.GetValue(col, row, out string value);
-
-        //spreadsheetGrid.SetValue(col,row, value);
-
+        cellName.Text = AddrToVar(col, row);
         cellValue.Text = value;
-        cellContent.Text = spreadsheetGrid.GetCurrentContent();
-        //cellContent.Text = "=hahah";
+        // use cell.StringForm as content in excel
+        if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
+            cellContent.Text = "";
+        else cellContent.Text = cell.stringForm;
     }
 
+    /// <summary>
+    /// when finish input, add into _data, calculate result, update all change, and draw
+    /// </summary>
+    public void finishInput(Object sender, EventArgs e)
+    {
+        // add into _data, spreadsheet will auto calculate result
+        var updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
+        // update change
+        foreach (string item in  updatelist)
+        {
+            string tempValue = _data.GetCellValue(item).ToString();
+            VarToAddr(item, out int col, out int row);
+            spreadsheetGrid.SetValue(col, row, tempValue);
+        }
+        // update value entry
+        cellValue.Text = _data.GetCellValue(updatelist[0]).ToString();
+    }
+
+    /// <summary>
+    /// help method, mapping variable to address
+    /// </summary>
+    /// <param name="v"></param>
+    /// <param name="col"></param>
+    /// <param name="row"></param>
+    private void VarToAddr (string v, out int col, out int row)
+    {
+        int[] i = new int[2];
+        col = (((int)v[0]) - 65);
+        row = (int.Parse(v.Substring(1))-1);
+    }
+
+    /// <summary>
+    /// help method, mapping address of cell to variable in spreadsheet
+    /// </summary>
+    /// <param name="col"></param>
+    /// <param name="row"></param>
+    /// <returns></returns>
+    private string AddrToVar(int col, int row)
+    {
+        return ((char)(col + 65)).ToString() + (row+1);
+    }
+
+    /// <summary>
+    /// clicked new, then create a new one
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void NewClicked(Object sender, EventArgs e)
     {
         spreadsheetGrid.Clear();
+        _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
     /// <summary>
@@ -68,11 +109,11 @@ public partial class MainPage : ContentPage
             FileResult fileResult = await FilePicker.Default.PickAsync();
             if (fileResult != null)
             {
-        Console.WriteLine( "Successfully chose file: " + fileResult.FileName );
-        // for windows, replace Console.WriteLine statements with:
-        //System.Diagnostics.Debug.WriteLine( ... );
+                Console.WriteLine("Successfully chose file: " + fileResult.FileName);
+                // for windows, replace Console.WriteLine statements with:
+                //System.Diagnostics.Debug.WriteLine( ... );
 
-        string fileContents = File.ReadAllText(fileResult.FullPath);
+                string fileContents = File.ReadAllText(fileResult.FullPath);
                 Console.WriteLine("First 100 file chars:\n" + fileContents.Substring(0, 100));
             }
             else
@@ -87,8 +128,5 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void cellContent_Completed(object sender, EventArgs e)
-    {
 
-    }
 }

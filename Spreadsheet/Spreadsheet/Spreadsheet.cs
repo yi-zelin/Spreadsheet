@@ -49,7 +49,7 @@ public class Spreadsheet : AbstractSpreadsheet
         internal object content;
 
         // store the value of cells, can be string double, or FormulaError
-        public object value;
+        internal object value;
 
         // string form of content, Json serialize and deserialize will use
         [JsonInclude]
