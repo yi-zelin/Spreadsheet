@@ -44,7 +44,7 @@ public partial class MainPage : ContentPage
         cellName.Text = getCol(col) + (row+1);
         spreadsheetGrid.GetValue(col, row, out string value);
 
-        spreadsheetGrid.SetValue(col,row, value);
+        //spreadsheetGrid.SetValue(col,row, value);
 
         cellValue.Text = value;
         cellContent.Text = spreadsheetGrid.GetCurrentContent();
