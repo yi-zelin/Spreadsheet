@@ -11,7 +11,10 @@ namespace SpreadsheetGUI;
 /// </summary>
 public partial class MainPage : ContentPage
 {
+    // save data and calculate
     private Spreadsheet _data;
+    // default save to this location
+    private string FileLocation;
     /// <summary>
     /// Constructor for the demo
     /// </summary>
@@ -140,8 +143,8 @@ public partial class MainPage : ContentPage
             FileResult fileResult = await FilePicker.Default.PickAsync();
             if (fileResult != null)
             {
-                System.Diagnostics.Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
-                System.Diagnostics.Debug.WriteLine("File Full Path: " + fileResult.FullPath);
+                Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
+                Debug.WriteLine("File Full Path: " + fileResult.FullPath);
                 // for windows, replace Console.WriteLine statements with:
                 //System.Diagnostics.Debug.WriteLine( ... );
 
@@ -158,25 +161,52 @@ public partial class MainPage : ContentPage
                     object tempValue = _data.GetCellValue(key);
                     if ( tempValue is FormulaError)
                         spreadsheetGrid.SetValue(col, row, "#Error!");
-                    spreadsheetGrid.SetValue(col, row, tempValue.ToString());
+                    else
+                        spreadsheetGrid.SetValue(col, row, tempValue.ToString());
                 }
+                FileLocation = fileResult.FullPath;
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("No file selected.");
+                Debug.WriteLine("No file selected.");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error opening file:");
-            Console.WriteLine(ex.Message);
+            Debug.WriteLine("Error opening file:");
+            Debug.WriteLine(ex.Message);
         }
     }
 
 
-    private void SaveClicked(Object sender, EventArgs e)
+    private async void SaveClicked(Object sender, EventArgs e)
     {
-        
+        try
+        {
+            // load from file, then save to that file
+            if (FileLocation != null)
+            {
+                _data.Save(FileLocation);
+            }
+            // save to file address.
+            else
+            {
+                FileResult fileResult = await FilePicker.Default.PickAsync();
+                if (fileResult != null)
+                {
+                    _data.Save(fileResult.FullPath);
+                }
+                else
+                {
+                    Debug.WriteLine("No file selected.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("Error opening file:");
+            Debug.WriteLine(ex.Message);
+        }
     }
 
 }
