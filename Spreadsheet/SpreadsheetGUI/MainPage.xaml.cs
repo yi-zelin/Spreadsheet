@@ -62,7 +62,7 @@ public partial class MainPage : ContentPage
     /// </summary>
     public void finishInput(Object sender, EventArgs e)
     {
-        
+        cellContent.Text = cellContent.Text.ToUpper();
         // add into _data, spreadsheet will auto calculate result
         IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
         // update change
@@ -124,6 +124,7 @@ public partial class MainPage : ContentPage
         spreadsheetGrid.Clear();
         cellContent.Text = "";
         cellValue.Text = "";
+        ToolTipProperties.SetText(cellValue, "Value");
         _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
@@ -139,24 +140,43 @@ public partial class MainPage : ContentPage
             FileResult fileResult = await FilePicker.Default.PickAsync();
             if (fileResult != null)
             {
-                Console.WriteLine("Successfully chose file: " + fileResult.FileName);
+                System.Diagnostics.Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
+                System.Diagnostics.Debug.WriteLine("File Full Path: " + fileResult.FullPath);
                 // for windows, replace Console.WriteLine statements with:
                 //System.Diagnostics.Debug.WriteLine( ... );
 
-                string fileContents = File.ReadAllText(fileResult.FullPath);
-                Console.WriteLine("First 100 file chars:\n" + fileContents.Substring(0, 100));
+                // remove exist data, upload _data, sync SpreadsheetGrid._values 
+                spreadsheetGrid.Clear();
+                cellContent.Text = "";
+                cellValue.Text = "";
+                ToolTipProperties.SetText(cellValue, "Value");
+                _data = new Spreadsheet(fileResult.FullPath, s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
+
+                foreach (string key in _data.Cells.Keys)
+                {
+                    VarToAddr(key, out int col, out int row);
+                    object tempValue = _data.GetCellValue(key);
+                    if ( tempValue is FormulaError)
+                        spreadsheetGrid.SetValue(col, row, "#Error!");
+                    spreadsheetGrid.SetValue(col, row, tempValue.ToString());
+                }
             }
             else
             {
-                Console.WriteLine("No file selected.");
+                System.Diagnostics.Debug.WriteLine("No file selected.");
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine("Error opening file:");
-            Console.WriteLine(ex);
+            Console.WriteLine(ex.Message);
         }
     }
 
+
+    private void SaveClicked(Object sender, EventArgs e)
+    {
+        
+    }
 
 }
