@@ -231,8 +231,9 @@ public class Spreadsheet : AbstractSpreadsheet
         name = ValidName(name);
         Changed = true;
         List<string> temp = new List<string>();
+
         // won't add empty cell into CellTabel
-        if (content.Length == 0)
+        if (content.Length == 0 && !Cells.ContainsKey(name))
         {
             if (Cells.Remove(name))
             {
@@ -240,12 +241,13 @@ public class Spreadsheet : AbstractSpreadsheet
             }
             return new List<string>();
         }
+
         else if (double.TryParse(content, out double number))
         {
             // content is double
             temp = SetCellContents(name, number).ToList();
         }
-        else if (content[0] == '=')
+        else if (content != "" && content[0] == '=')
         {
             // content is Formula, Formula class will throw exception if its not
             temp = SetCellContents(name, new Formula(content.Remove(0, 1), normalized, isValid)).ToList();
@@ -258,7 +260,6 @@ public class Spreadsheet : AbstractSpreadsheet
 
         // update value of cells
         Cells[name].stringForm = content;
-        Debug.WriteLine("Setcellcontent " + content);
 
         foreach (string s in temp)
         {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.Controls;
 using SpreadsheetUtilities;
 using SS;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace SpreadsheetGUI;
@@ -61,15 +62,19 @@ public partial class MainPage : ContentPage
     /// </summary>
     public void finishInput(Object sender, EventArgs e)
     {
+        
         // add into _data, spreadsheet will auto calculate result
         IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
         // update change
-        foreach (string item in  updatelist)
+        foreach (string item in updatelist)
         {
             string tempValue = FormalCellValue(item);
             VarToAddr(item, out int col, out int row);
             spreadsheetGrid.SetValue(col, row, tempValue);
         }
+        // set empty cell into empty
+        if (updatelist.Count == 0)
+            return;
         // update value entry
         cellValue.Text = FormalCellValue(updatelist[0]);
     }
