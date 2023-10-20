@@ -21,6 +21,7 @@
             <!--cell name-->
             <Entry x:Name="cellName"
                    Text=""
+                   TextColor="Black"
                    ToolTipProperties.Text="Name"
                    Placeholder="Name"
                    BackgroundColor="WhiteSmoke"
@@ -30,6 +31,7 @@
             <!--cell value-->
             <Entry x:Name="cellValue"
                    Text=""
+                   TextColor="Black"
                    ToolTipProperties.Text="Value"
                    Placeholder="Value"
                    BackgroundColor="WhiteSmoke"
@@ -39,6 +41,7 @@
             <!--cell content-->
             <Entry x:Name="cellContent"
                    Text=""
+                   TextColor="Black"
                    Completed="finishInput"
                    
                    ToolTipProperties.Text="Content"

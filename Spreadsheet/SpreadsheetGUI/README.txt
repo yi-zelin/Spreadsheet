@@ -14,6 +14,9 @@
 
 
 # known bug
+
+
+# solved bug
 * 暗色模式下的字体颜色
 
 
