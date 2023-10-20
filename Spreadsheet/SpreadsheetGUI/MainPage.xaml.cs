@@ -57,7 +57,7 @@ public partial class MainPage : ContentPage
         // use cell.StringForm as content in excel
         if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
             cellContent.Text = "";
-        else cellContent.Text = cell.stringForm;
+        else cellContent.Text = cell.StringForm;
     }
 
     /// <summary>

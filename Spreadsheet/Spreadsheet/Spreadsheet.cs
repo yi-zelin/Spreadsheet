@@ -53,16 +53,16 @@ public class Spreadsheet : AbstractSpreadsheet
 
         // string form of content, Json serialize and deserialize will use
         [JsonInclude]
-        public string stringForm;
+        public string StringForm;
 
-        // if its a double or text, then stringForm = conetnet.tosrting
-        // if its a formula, stringForm = "=" + f.toString();
+        // if its a double or text, then StringForm = conetnet.tosrting
+        // if its a formula, StringForm = "=" + f.toString();
         [JsonConstructor]
-        public Cell(string stringForm)
+        public Cell(string StringForm)
         {
             value = "";
             content = "";
-            this.stringForm = stringForm;
+            this.StringForm = StringForm;
         }
 
         // used when create cell, not use with json
@@ -71,17 +71,17 @@ public class Spreadsheet : AbstractSpreadsheet
             this.content = content;
             if (content is double)
             {
-                stringForm = ((double)content).ToString();
+                StringForm = ((double)content).ToString();
                 value = content;
             }
             else if (content is string)
             {
-                stringForm = (string)content;
+                StringForm = (string)content;
                 value = content;
             }
             else
             {
-                stringForm = "=" + ((Formula)content).ToString();
+                StringForm = "=" + ((Formula)content).ToString();
                 value = "";
             }
         }
@@ -135,7 +135,7 @@ public class Spreadsheet : AbstractSpreadsheet
 
             foreach (var v in ss.Cells)
             {
-                this.SetContentsOfCell(v.Key, v.Value.stringForm);
+                this.SetContentsOfCell(v.Key, v.Value.StringForm);
             }
         }
         catch (Exception ex)
@@ -231,6 +231,8 @@ public class Spreadsheet : AbstractSpreadsheet
         name = ValidName(name);
         List<string> temp = new List<string>();
         Changed = true;
+        if (content == null)
+            content = "";
 
         // won't add empty cell into CellTabel
         if (content.Length == 0 && !Cells.ContainsKey(name))
@@ -239,7 +241,6 @@ public class Spreadsheet : AbstractSpreadsheet
             {
                 dependencyGraph.ReplaceDependees(name, new List<string>());
             }
-            Changed = false;
             return new List<string>();
         }
 
@@ -260,7 +261,7 @@ public class Spreadsheet : AbstractSpreadsheet
         }
 
         // update value of cells
-        Cells[name].stringForm = content;
+        Cells[name].StringForm = content;
 
         foreach (string s in temp)
         {
