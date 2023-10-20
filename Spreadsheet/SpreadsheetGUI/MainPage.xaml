@@ -9,6 +9,10 @@
             <MenuFlyoutItem Text="Open" Clicked="OpenClicked" />
             <MenuFlyoutItem Text="Save" Clicked="SaveClicked" />
         </MenuBarItem>
+        <MenuBarItem Text="Unsaved" 
+                     x:Name="status"/>
+        <MenuBarItem Text="" 
+                     x:Name="fileName"/>
     </ContentPage.MenuBarItems>
 
     <Grid RowDefinitions="48, *">

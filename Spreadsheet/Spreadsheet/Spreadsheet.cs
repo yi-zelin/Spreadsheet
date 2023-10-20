@@ -229,8 +229,8 @@ public class Spreadsheet : AbstractSpreadsheet
     {
         // ValidName() check validity and normalize it
         name = ValidName(name);
-        Changed = true;
         List<string> temp = new List<string>();
+        Changed = true;
 
         // won't add empty cell into CellTabel
         if (content.Length == 0 && !Cells.ContainsKey(name))
@@ -239,6 +239,7 @@ public class Spreadsheet : AbstractSpreadsheet
             {
                 dependencyGraph.ReplaceDependees(name, new List<string>());
             }
+            Changed = false;
             return new List<string>();
         }
 

@@ -13,7 +13,7 @@ public partial class MainPage : ContentPage
 {
     // save data and calculate
     private Spreadsheet _data;
-    // default save to this location
+    // default save to this location, with name
     private string FileLocation;
     /// <summary>
     /// Constructor for the demo
@@ -80,6 +80,15 @@ public partial class MainPage : ContentPage
             return;
         // update value entry
         cellValue.Text = FormalCellValue(updatelist[0]);
+
+        // update save status
+        if (_data.Changed)
+        {
+            status.Text = "Unsaved";
+        } else
+        {
+            status.Text = "Saved";
+        }
     }
 
     private string FormalCellValue(string variable)
@@ -165,6 +174,8 @@ public partial class MainPage : ContentPage
                         spreadsheetGrid.SetValue(col, row, tempValue.ToString());
                 }
                 FileLocation = fileResult.FullPath;
+                fileName.Text = fileResult.FileName;
+                status.Text = "Saved";
             }
             else
             {
@@ -187,6 +198,9 @@ public partial class MainPage : ContentPage
             if (FileLocation != null)
             {
                 _data.Save(FileLocation);
+                // just notice bar, don't neet to wait
+                _ = DisplayAlert("Selection:", "column ", "OK");
+                status.Text = "Saved!";
             }
             // save to file address.
             else
@@ -195,6 +209,8 @@ public partial class MainPage : ContentPage
                 if (fileResult != null)
                 {
                     _data.Save(fileResult.FullPath);
+                    status.Text = "Saved!";
+                    fileName.Text = fileResult.FileName;
                 }
                 else
                 {
@@ -204,7 +220,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Error opening file:");
+            Debug.WriteLine("Error with file:");
             Debug.WriteLine(ex.Message);
         }
     }
