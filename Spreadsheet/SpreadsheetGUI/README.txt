@@ -18,7 +18,7 @@
 
 # solved bug
 * 暗色模式下的字体颜色
-
+* circlar excption 
 
 # backlog
 * s => ToUpper() 应该可以不用toupper
