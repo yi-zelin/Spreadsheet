@@ -9,9 +9,11 @@
             <MenuFlyoutItem Text="Open" Clicked="OpenClicked" />
         </MenuBarItem>
     </ContentPage.MenuBarItems>
-    
+
     <Grid RowDefinitions="48, *">
-        <HorizontalStackLayout BackgroundColor="Gainsboro">
+        <HorizontalStackLayout BackgroundColor="Gainsboro"
+                               Grid.Row="0">
+            <!--cell name-->
             <Entry x:Name="cellName"
                    Text=""
                    ToolTipProperties.Text="Name"
@@ -19,6 +21,8 @@
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
                    Margin="5"/>
+            
+            <!--cell value-->
             <Entry x:Name="cellValue"
                    Text=""
                    ToolTipProperties.Text="Value"
@@ -26,6 +30,8 @@
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
                    Margin="5"/>
+            
+            <!--cell content-->
             <Entry x:Name="cellContent"
                    Text=""
                    Completed="finishInput"

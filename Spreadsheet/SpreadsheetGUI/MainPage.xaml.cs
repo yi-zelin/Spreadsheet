@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Controls;
+using SpreadsheetUtilities;
 using SS;
 using System.Text.RegularExpressions;
 
@@ -38,6 +39,17 @@ public partial class MainPage : ContentPage
         spreadsheetGrid.GetValue(col, row, out string value);
         cellName.Text = AddrToVar(col, row);
         cellValue.Text = value;
+
+        // update error message detail
+        object t = _data.GetCellValue(AddrToVar(col, row));
+        if ( t is FormulaError)
+        {
+            ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
+        } else
+        {
+            ToolTipProperties.SetText(cellValue, "Value");
+        }
+
         // use cell.StringForm as content in excel
         if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
             cellContent.Text = "";
@@ -50,17 +62,29 @@ public partial class MainPage : ContentPage
     public void finishInput(Object sender, EventArgs e)
     {
         // add into _data, spreadsheet will auto calculate result
-        var updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
+        IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
         // update change
         foreach (string item in  updatelist)
         {
-            string tempValue = _data.GetCellValue(item).ToString();
+            string tempValue = FormalCellValue(item);
             VarToAddr(item, out int col, out int row);
             spreadsheetGrid.SetValue(col, row, tempValue);
         }
         // update value entry
-        cellValue.Text = _data.GetCellValue(updatelist[0]).ToString();
+        cellValue.Text = FormalCellValue(updatelist[0]);
     }
+
+    private string FormalCellValue(string variable)
+    {
+        object t = _data.GetCellValue(variable);
+        if (t is FormulaError)
+        {
+            ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
+            return "#Error!";
+        }
+        return t.ToString();
+    }
+
 
     /// <summary>
     /// help method, mapping variable to address
@@ -70,8 +94,7 @@ public partial class MainPage : ContentPage
     /// <param name="row"></param>
     private void VarToAddr (string v, out int col, out int row)
     {
-        int[] i = new int[2];
-        col = (((int)v[0]) - 65);
+        col = (((int) v[0]) - 65);
         row = (int.Parse(v.Substring(1))-1);
     }
 
@@ -94,6 +117,8 @@ public partial class MainPage : ContentPage
     private void NewClicked(Object sender, EventArgs e)
     {
         spreadsheetGrid.Clear();
+        cellContent.Text = "";
+        cellValue.Text = "";
         _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
