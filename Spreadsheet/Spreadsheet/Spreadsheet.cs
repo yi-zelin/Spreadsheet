@@ -416,6 +416,7 @@ public class Spreadsheet : AbstractSpreadsheet
             var options = new JsonSerializerOptions { WriteIndented = true };
             string jsonString = JsonSerializer.Serialize(this, options);
             File.WriteAllText(filename, jsonString);
+            Changed = false;
         }
         catch
         {
