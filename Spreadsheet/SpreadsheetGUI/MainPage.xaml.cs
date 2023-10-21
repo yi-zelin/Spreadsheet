@@ -2,6 +2,7 @@
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace SpreadsheetGUI;
@@ -45,19 +46,28 @@ public partial class MainPage : ContentPage
         cellValue.Text = value;
 
         // update error message detail
-        object t = _data.GetCellValue(AddrToVar(col, row));
-        if ( t is FormulaError)
-        {
-            ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
-        } else
-        {
-            ToolTipProperties.SetText(cellValue, "Value");
-        }
+       
+        try {
+            object t = _data.GetCellValue(AddrToVar(col, row));
+            if (t is FormulaError)
+            {
+                ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
+            }
+            else
+            {
+                ToolTipProperties.SetText(cellValue, "Value");
+            }
 
-        // use cell.StringForm as content in excel
-        if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
-            cellContent.Text = "";
-        else cellContent.Text = cell.StringForm;
+            // use cell.StringForm as content in excel
+            if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
+                cellContent.Text = "";
+            else cellContent.Text = cell.StringForm;
+
+        }
+        catch (CircularException) {
+            cellContent.Text = "CircularException";
+        }
+       
     }
 
     /// <summary>
@@ -199,7 +209,7 @@ public partial class MainPage : ContentPage
             {
                 _data.Save(FileLocation);
                 // just notice bar, don't neet to wait
-                _ = DisplayAlert("Selection:", "column ", "OK");
+                _ = DisplayAlert("Selection:", "save susucessfully!", " OK");
                 status.Text = "Saved!";
             }
             // save to file address.
