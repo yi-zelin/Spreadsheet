@@ -2,7 +2,6 @@
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace SpreadsheetGUI;
@@ -46,28 +45,19 @@ public partial class MainPage : ContentPage
         cellValue.Text = value;
 
         // update error message detail
-       
-        try {
-            object t = _data.GetCellValue(AddrToVar(col, row));
-            if (t is FormulaError)
-            {
-                ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
-            }
-            else
-            {
-                ToolTipProperties.SetText(cellValue, "Value");
-            }
-
-            // use cell.StringForm as content in excel
-            if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
-                cellContent.Text = "";
-            else cellContent.Text = cell.StringForm;
-
+        object t = _data.GetCellValue(AddrToVar(col, row));
+        if ( t is FormulaError)
+        {
+            ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
+        } else
+        {
+            ToolTipProperties.SetText(cellValue, "Value");
         }
-        catch (CircularException) {
-            cellContent.Text = "CircularException";
-        }
-       
+
+        // use cell.StringForm as content in excel
+        if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
+            cellContent.Text = "";
+        else cellContent.Text = cell.StringForm;
     }
 
     /// <summary>
@@ -76,6 +66,7 @@ public partial class MainPage : ContentPage
     public void finishInput(Object sender, EventArgs e)
     {
         cellContent.Text = cellContent.Text.ToUpper();
+        
         // add into _data, spreadsheet will auto calculate result
         IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
         // update change
