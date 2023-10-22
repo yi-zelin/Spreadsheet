@@ -65,31 +65,57 @@ public partial class MainPage : ContentPage
     /// </summary>
     public void finishInput(Object sender, EventArgs e)
     {
-        cellContent.Text = cellContent.Text.ToUpper();
-        
-        // add into _data, spreadsheet will auto calculate result
-        IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
-        // update change
-        foreach (string item in updatelist)
+        try
         {
-            string tempValue = FormalCellValue(item);
-            VarToAddr(item, out int col, out int row);
-            spreadsheetGrid.SetValue(col, row, tempValue);
-        }
-        // set empty cell into empty
-        if (updatelist.Count == 0)
-            return;
-        // update value entry
-        cellValue.Text = FormalCellValue(updatelist[0]);
+            cellContent.Text = cellContent.Text.ToUpper();
+            // add into _data, spreadsheet will auto calculate result
+            IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
+            // update change
+            foreach (string item in updatelist)
+            {
+                string tempValue = FormalCellValue(item);
+                VarToAddr(item, out int col, out int row);
+                spreadsheetGrid.SetValue(col, row, tempValue);
+            }
+            // set empty cell into empty
+            if (updatelist.Count == 0)
+                return;
+            // update value entry
+            cellValue.Text = FormalCellValue(updatelist[0]);
 
-        // update save status
-        if (_data.Changed)
-        {
-            status.Text = "Unsaved";
-        } else
-        {
-            status.Text = "Saved";
+            // update save status
+            if (_data.Changed)
+            {
+                status.Text = "Unsaved";
+            }
+            else
+            {
+                status.Text = "Saved";
+            }
         }
+        catch (CircularException)
+        {
+            spreadsheetGrid.GetSelection(out int col1, out int row1);
+            spreadsheetGrid.SetValue(col1,row1, "#Error");
+           
+            ToolTipProperties.SetText(cellValue, "#Error: circlar error ");
+        }
+        catch (ArgumentException)
+        {
+            spreadsheetGrid.GetSelection(out int col1, out int row1);
+            spreadsheetGrid.SetValue(col1, row1, "0");
+            _data.SetContentsOfCell(cellName.Text, "0");
+            ToolTipProperties.SetText(cellValue, "#Error: check in put value ");
+        }
+        catch (FormulaFormatException)
+        {
+            spreadsheetGrid.GetSelection(out int col1, out int row1);
+            spreadsheetGrid.SetValue(col1, row1, "#Error");
+            ToolTipProperties.SetText(cellValue, "#Error: Formula format error ");
+        }
+
+
+
     }
 
     private string FormalCellValue(string variable)

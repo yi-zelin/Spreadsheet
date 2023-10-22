@@ -49,6 +49,12 @@
                    BackgroundColor="WhiteSmoke"
                    Margin="5"
                    WidthRequest="150"/>
+            <Button
+                  x:Name="sun"
+                    Text="sum"               
+                    Margin="5"
+                    WidthRequest="150"/>
+                
         </HorizontalStackLayout>
 
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
