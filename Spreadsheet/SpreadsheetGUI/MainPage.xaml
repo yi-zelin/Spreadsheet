@@ -49,15 +49,36 @@
                    BackgroundColor="WhiteSmoke"
                    Margin="5"
                    WidthRequest="150"/>
+            <Entry x:Name="Sum"
+                    Text=""
+                    TextColor="Black"
+                    Completed="SumComplete"
+                   
+                    ToolTipProperties.Text="sum"
+                    Placeholder="Content"
+                    BackgroundColor="WhiteSmoke"
+                    Margin="5"
+                    WidthRequest="150"/>
+                    
             <Button
                   x:Name="sun"
                     Text="sum"               
                     Margin="5"
+                    Clicked="sumSum"
                     WidthRequest="150"/>
-                
+            <Button
+            x:Name="clear"
+            Text="clearButtom"               
+            Margin="5"
+            Clicked="clearButtom"
+            WidthRequest="150"/>
+
+
+
         </HorizontalStackLayout>
 
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
+ 
                             Grid.Row="1"/>
     </Grid>
 </ContentPage>

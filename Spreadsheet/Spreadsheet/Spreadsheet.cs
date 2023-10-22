@@ -310,6 +310,7 @@ public class Spreadsheet : AbstractSpreadsheet
     protected override IList<string> SetCellContents(string name, double number)
     {
         SetClearContents(name, number);
+
         return GetCellsToRecalculate(name).ToList();
     }
 
@@ -328,6 +329,7 @@ public class Spreadsheet : AbstractSpreadsheet
     protected override IList<string> SetCellContents(string name, string text)
     {
         SetClearContents(name, text);
+
         return GetCellsToRecalculate(name).ToList();
     }
 
@@ -347,15 +349,22 @@ public class Spreadsheet : AbstractSpreadsheet
         bool exist = Cells.ContainsKey(name);
         // save cell and relationship before change
         List<string> dependee = dependencyGraph.GetDependees(name).ToList();
+
         List<string> dependent = dependencyGraph.GetDependents(name).ToList();
+
         object? content = null;
+
         object? value = null;
+
         // if already exist, save data, else add into Cells
         if (exist)
         {
             content = Cells[name].content;
+
             value = Cells[name].value;
+
             Cells[name].content = formula;
+
         }
         else { Cells.Add(name, new Cell(formula)); }
 
@@ -376,8 +385,11 @@ public class Spreadsheet : AbstractSpreadsheet
             if (content != null && value != null)
             {
                 dependencyGraph.ReplaceDependees(name, dependee);
+
                 dependencyGraph.ReplaceDependents(name, dependent);
+
                 Cells[name].content = content;
+
                 Cells[name].value = value;
             }
             else
@@ -414,8 +426,11 @@ public class Spreadsheet : AbstractSpreadsheet
         try
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
+
             string jsonString = JsonSerializer.Serialize(this, options);
+
             File.WriteAllText(filename, jsonString);
+
             Changed = false;
         }
         catch
@@ -432,8 +447,11 @@ public class Spreadsheet : AbstractSpreadsheet
     public override object GetCellValue(string name)
     {
         if (Cells.TryGetValue(ValidName(name), out Cell? cell))
+
             return Cells[ValidName(name)].value;
+
         else
+
             return "";
     }
 }

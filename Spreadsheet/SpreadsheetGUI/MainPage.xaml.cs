@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
@@ -15,13 +16,14 @@ public partial class MainPage : ContentPage
     private Spreadsheet _data;
     // default save to this location, with name
     private string FileLocation;
+    private List<string> _sumList;
     /// <summary>
     /// Constructor for the demo
     /// </summary>
 	public MainPage()
     {
         InitializeComponent();
-
+        _sumList = new List<string>();
         // This an example of registering a method so that it is notified when
         // an event happens.  The SelectionChanged event is declared with a
         // delegate that specifies that all methods that register with it must
@@ -46,7 +48,7 @@ public partial class MainPage : ContentPage
 
         // update error message detail
         object t = _data.GetCellValue(AddrToVar(col, row));
-        if ( t is FormulaError)
+        if (t is FormulaError)
         {
             ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
         } else
@@ -96,8 +98,8 @@ public partial class MainPage : ContentPage
         catch (CircularException)
         {
             spreadsheetGrid.GetSelection(out int col1, out int row1);
-            spreadsheetGrid.SetValue(col1,row1, "#Error");
-           
+            spreadsheetGrid.SetValue(col1, row1, "#Error");
+
             ToolTipProperties.SetText(cellValue, "#Error: circlar error ");
         }
         catch (ArgumentException)
@@ -136,10 +138,10 @@ public partial class MainPage : ContentPage
     /// <param name="v"></param>
     /// <param name="col"></param>
     /// <param name="row"></param>
-    private void VarToAddr (string v, out int col, out int row)
+    private void VarToAddr(string v, out int col, out int row)
     {
-        col = (((int) v[0]) - 65);
-        row = (int.Parse(v.Substring(1))-1);
+        col = (((int)v[0]) - 65);
+        row = (int.Parse(v.Substring(1)) - 1);
     }
 
     /// <summary>
@@ -150,7 +152,7 @@ public partial class MainPage : ContentPage
     /// <returns></returns>
     private string AddrToVar(int col, int row)
     {
-        return ((char)(col + 65)).ToString() + (row+1);
+        return ((char)(col + 65)).ToString() + (row + 1);
     }
 
     /// <summary>
@@ -195,7 +197,7 @@ public partial class MainPage : ContentPage
                 {
                     VarToAddr(key, out int col, out int row);
                     object tempValue = _data.GetCellValue(key);
-                    if ( tempValue is FormulaError)
+                    if (tempValue is FormulaError)
                         spreadsheetGrid.SetValue(col, row, "#Error!");
                     else
                         spreadsheetGrid.SetValue(col, row, tempValue.ToString());
@@ -227,16 +229,20 @@ public partial class MainPage : ContentPage
                 _data.Save(FileLocation);
                 // just notice bar, don't neet to wait
                 _ = DisplayAlert("Selection:", "save susucessfully!", " OK");
+
                 status.Text = "Saved!";
             }
             // save to file address.
             else
             {
                 FileResult fileResult = await FilePicker.Default.PickAsync();
+
                 if (fileResult != null)
                 {
                     _data.Save(fileResult.FullPath);
+
                     status.Text = "Saved!";
+
                     fileName.Text = fileResult.FileName;
                 }
                 else
@@ -248,8 +254,56 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             Debug.WriteLine("Error with file:");
+
             Debug.WriteLine(ex.Message);
         }
     }
+    private void SumComplete(Object sender, EventArgs e) {     
+        
+        spreadsheetGrid.GetSelection(out int col,out int row);
+
+        string target = AddrToVar(col,row);
+
+        displaySelection(spreadsheetGrid);
+
+        _sumList.Add(cellName.Text);
+     
+        string result = string.Join(", ", _sumList);
+
+        Sum.Text = result;
+    
+    }
+    private void  sumSum(Object sender, EventArgs e) { 
+
+        double sum = 0;
+
+        string result = string.Join(", ", _sumList);
+
+        Sum.Text = result;
+        try
+        {
+            foreach (var item in _sumList)
+            {
+                sum += (double)_data.GetCellValue(item);
+            }
+
+            DisplayAlert("Total", result + " = " + sum, "ok");
+
+            _sumList.Clear();
+        }
+        catch (Exception) {
+
+            DisplayAlert("Error", "Please Check the input", "OK");
+        }
+    }
+    private void clearButtom (Object sender, EventArgs e)
+    {
+        
+        _sumList.Clear();
+        string result = string.Join(", ", _sumList);
+        Sum.Text = result;
+
+    }
+   
 
 }
