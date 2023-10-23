@@ -15,7 +15,20 @@
                      x:Name="fileName"/>
     </ContentPage.MenuBarItems>
 
-    <Grid RowDefinitions="48, *">
+    <Grid RowDefinitions="48,*, 32">
+        <HorizontalStackLayout BackgroundColor="Gainsboro"
+                   Grid.Row="3">
+            <!-- Your Content -->
+            <Entry x:Name="cellNsame"
+       Text=""
+       TextColor="Black"
+       ToolTipProperties.Text="Namse"
+       Placeholder="Name"
+       BackgroundColor="WhiteSmoke"
+       IsReadOnly="True"
+       Margin="5"/>
+
+        </HorizontalStackLayout>
         <HorizontalStackLayout BackgroundColor="Gainsboro"
                                Grid.Row="0">
             <!--cell name-->
@@ -80,6 +93,7 @@
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
  
                             Grid.Row="1"/>
+        
     </Grid>
 </ContentPage>
 

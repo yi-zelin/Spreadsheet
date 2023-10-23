@@ -48,6 +48,10 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="CommunityToolkit.Maui" Version="6.0.0" />
+	  <PackageReference Include="System.Reactive.Windows.Forms" Version="6.0.0" />
+	</ItemGroup>
+	<ItemGroup>
 	  <ProjectReference Include="..\Spreadsheet\Spreadsheet.csproj" />
 	</ItemGroup>
 </Project>

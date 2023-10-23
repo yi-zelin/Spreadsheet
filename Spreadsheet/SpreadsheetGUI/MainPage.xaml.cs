@@ -4,6 +4,16 @@ using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.Windows.Forms;
+using Windows.Storage.Pickers;
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Storage;
+using CommunityToolkit.Maui.Alerts;
+using System.Text;
+using System.Threading;
+using static System.Environment;
+using System;
 
 namespace SpreadsheetGUI;
 
@@ -176,9 +186,17 @@ public partial class MainPage : ContentPage
     /// </summary>
     private async void OpenClicked(Object sender, EventArgs e)
     {
+        if (status.Text == "Unsaved")
+        {
+           
+            bool result =await DisplayAlert("Selection:", "Unsave Yet!", accept:"save",cancel:" OK");
+
+
+        }
         try
         {
             FileResult fileResult = await FilePicker.Default.PickAsync();
+          
             if (fileResult != null)
             {
                 Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
@@ -192,7 +210,7 @@ public partial class MainPage : ContentPage
                 cellValue.Text = "";
                 ToolTipProperties.SetText(cellValue, "Value");
                 _data = new Spreadsheet(fileResult.FullPath, s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
-
+         
                 foreach (string key in _data.Cells.Keys)
                 {
                     VarToAddr(key, out int col, out int row);
@@ -221,42 +239,28 @@ public partial class MainPage : ContentPage
 
     private async void SaveClicked(Object sender, EventArgs e)
     {
+            CancellationTokenSource c =new CancellationTokenSource();
         try
         {
-            // load from file, then save to that file
-            if (FileLocation != null)
-            {
-                _data.Save(FileLocation);
-                // just notice bar, don't neet to wait
-                _ = DisplayAlert("Selection:", "save susucessfully!", " OK");
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ss");
+            _data.Save(filePath);
+            string jsonFile = File.ReadAllText(filePath);
+            var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonFile));
+            var path = await FileSaver.SaveAsync("spread.sprd", stream, c.Token);
 
-                status.Text = "Saved!";
-            }
-            // save to file address.
-            else
-            {
-                FileResult fileResult = await FilePicker.Default.PickAsync();
-
-                if (fileResult != null)
-                {
-                    _data.Save(fileResult.FullPath);
-
-                    status.Text = "Saved!";
-
-                    fileName.Text = fileResult.FileName;
-                }
-                else
-                {
-                    Debug.WriteLine("No file selected.");
-                }
-            }
+       
         }
+
+
+
         catch (Exception ex)
         {
             Debug.WriteLine("Error with file:");
 
             Debug.WriteLine(ex.Message);
+
         }
+    
     }
     private void SumComplete(Object sender, EventArgs e) {     
         
@@ -296,6 +300,7 @@ public partial class MainPage : ContentPage
             DisplayAlert("Error", "Please Check the input", "OK");
         }
     }
+
     private void clearButtom (Object sender, EventArgs e)
     {
         
@@ -304,6 +309,9 @@ public partial class MainPage : ContentPage
         Sum.Text = result;
 
     }
-   
+
+  
+
+
 
 }
