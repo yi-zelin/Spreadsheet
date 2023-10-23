@@ -1,19 +1,9 @@
-﻿using Microsoft.Maui.Controls;
-using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
+﻿using CommunityToolkit.Maui.Storage;
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.IO;
-using System.Windows.Forms;
-using Windows.Storage.Pickers;
-using CommunityToolkit.Maui;
-using CommunityToolkit.Maui.Storage;
-using CommunityToolkit.Maui.Alerts;
 using System.Text;
-using System.Threading;
-using static System.Environment;
-using System;
+using System.Text.RegularExpressions;
 
 namespace SpreadsheetGUI;
 
@@ -24,9 +14,12 @@ public partial class MainPage : ContentPage
 {
     // save data and calculate
     private Spreadsheet _data;
-    // default save to this location, with name
-    private string FileLocation;
-    private List<string> _sumList;
+
+    // for auto save method
+    private Object sender;
+    private EventArgs e;
+    private bool changed;
+
     /// <summary>
     /// Constructor for the demo
     /// </summary>
@@ -189,7 +182,7 @@ public partial class MainPage : ContentPage
         if (status.Text == "Unsaved")
         {
            
-            bool result =await DisplayAlert("Selection:", "Unsave Yet!", accept:"save",cancel:" OK");
+            bool result =await DisplayAlert("Selection:", "Unsaved Yet!", accept:"save",cancel:" OK");
 
 
         }
@@ -220,7 +213,6 @@ public partial class MainPage : ContentPage
                     else
                         spreadsheetGrid.SetValue(col, row, tempValue.ToString());
                 }
-                FileLocation = fileResult.FullPath;
                 fileName.Text = fileResult.FileName;
                 status.Text = "Saved";
             }
@@ -231,83 +223,35 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
+            _=DisplayAlert("Error", "Error opening file", "OK");
             Debug.WriteLine("Error opening file:");
             Debug.WriteLine(ex.Message);
         }
     }
 
-
-    private async void SaveClicked(Object sender, EventArgs e)
+    private async void RenameClicked(Object sender, EventArgs e) 
     {
-            CancellationTokenSource c =new CancellationTokenSource();
+        fileName.Text = await DisplayPromptAsync("Rename", "Enter new name");
+        fileName.Text = fileName.Text + ".sprd";
+    }
+
+        Sum.Text = result;
         try
         {
-            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ss");
+            CancellationTokenSource c = new CancellationTokenSource();
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName.Text);
             _data.Save(filePath);
             string jsonFile = File.ReadAllText(filePath);
-            var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonFile));
-            var path = await FileSaver.SaveAsync("spread.sprd", stream, c.Token);
-
-       
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonFile));
+            var path = await FileSaver.SaveAsync(fileName.Text, stream, c.Token);
+            status.Text = "Saved";
+            _ = DisplayAlert("Saved", "File saved under folder: " + PathWithOutName(filePath) , "OK");
         }
-
-
-
         catch (Exception ex)
         {
             Debug.WriteLine("Error with file:");
-
             Debug.WriteLine(ex.Message);
-
         }
-    
-    }
-    private void SumComplete(Object sender, EventArgs e) {     
-        
-        spreadsheetGrid.GetSelection(out int col,out int row);
-
-        string target = AddrToVar(col,row);
-
-        displaySelection(spreadsheetGrid);
-
-        _sumList.Add(cellName.Text);
-     
-        string result = string.Join(", ", _sumList);
-
-        Sum.Text = result;
-    
-    }
-    private void  sumSum(Object sender, EventArgs e) { 
-
-        double sum = 0;
-
-        string result = string.Join(", ", _sumList);
-
-        Sum.Text = result;
-        try
-        {
-            foreach (var item in _sumList)
-            {
-                sum += (double)_data.GetCellValue(item);
-            }
-
-            DisplayAlert("Total", result + " = " + sum, "ok");
-
-            _sumList.Clear();
-        }
-        catch (Exception) {
-
-            DisplayAlert("Error", "Please Check the input", "OK");
-        }
-    }
-
-    private void clearButtom (Object sender, EventArgs e)
-    {
-        
-        _sumList.Clear();
-        string result = string.Join(", ", _sumList);
-        Sum.Text = result;
-
     }
 
   
