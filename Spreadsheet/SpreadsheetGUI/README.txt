@@ -3,12 +3,13 @@
 * 文件名称
 * save
 * save to
-
-
-# Feature Stack
 * 自动赋值
 * sum 求和
 * 改名
+
+
+# Feature Stack
+
 * high light error
 * 双击编辑
 
@@ -18,8 +19,4 @@
 
 # solved bug
 * 暗色模式下的字体颜色
-* 
-我修改了一下可以不报错circlar excption 
-
-# backlog
-* s => ToUpper() 应该可以不用toupper
+* 我修改了一下可以不报错circlar excption 

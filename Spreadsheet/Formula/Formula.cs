@@ -77,7 +77,6 @@ public class Formula
         string opeR = @"^[\+\-*/\)]$";
         string opeL = @"^[\+\-*/\(]$";
 
-
         // One Token Rule
         // must have at least one token
         if (tempString.Count() == 0) { throw new FormulaFormatException("2 Violate One Token Rule"); }
@@ -99,7 +98,7 @@ public class Formula
         for (int i = 0; i <= tempString.Count - 1; i++)
         {
             // format integers, scientific notation to double
-            // 
+            //
             // "3.0000", "3", "3.", "3.0"   => "3"
             // "3.1000", "3.1"              => "3.1"
             // "3e3", "3E3", "3000"         => "3000"
@@ -149,7 +148,6 @@ public class Formula
         dataOfFormula = tempString;
     }
 
-
     /// <summary>
     /// help method, static for I want to use this in constructor. being used
     /// multiple times, make program easier to read and debug.
@@ -196,8 +194,6 @@ public class Formula
         return IsDoubleNum(s) || IsValidVar(s, isValid);
     }
 
-
-
     /// <summary>help method to analyze "+" or "-"</summary>
     private bool IsPlusOrSubt(String s) => s == "+" || s == "-";
 
@@ -206,7 +202,6 @@ public class Formula
 
     /// <summary>help method check if s in HashSet</summary>
     private bool IsVar(string s) => normFormVariables.Contains(s);
-
 
     /// <summary>
     /// a help method to calculate infix expression
@@ -228,7 +223,6 @@ public class Formula
             return num1 / num2;
         }
     }
-
 
     /// <summary>
     /// Evaluates this Formula, using the lookup delegate to determine the values of
@@ -340,7 +334,6 @@ public class Formula
             double doubleItem = values.Pop();
             return Calculate(values.Pop(), operators.Pop(), doubleItem);
         }
-
     }
 
     /// <summary>

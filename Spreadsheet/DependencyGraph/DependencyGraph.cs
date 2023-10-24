@@ -6,19 +6,19 @@ namespace SpreadsheetUtilities;
 /// <summary>
 /// (s1,t1) is an ordered pair of strings
 /// t1 depends on s1; s1 must be evaluated before t1
-/// 
+///
 /// A DependencyGraph can be modeled as a set of ordered pairs of strings.  Two ordered pairs
 /// (s1,t1) and (s2,t2) are considered equal if and only if s1 equals s2 and t1 equals t2.
-/// Recall that sets never contain duplicates.  If an attempt is made to add an element to a 
+/// Recall that sets never contain duplicates.  If an attempt is made to add an element to a
 /// set, and the element is already in the set, the set remains unchanged.
-/// 
+///
 /// Given a DependencyGraph DG:
-/// 
+///
 ///    (1) If s is a string, the set of all strings t such that (s,t) is in DG is called dependents(s).
-///        (The set of things that depend on s)    
-///        
+///        (The set of things that depend on s)
+///
 ///    (2) If s is a string, the set of all strings t such that (t,s) is in DG is called dependees(s).
-///        (The set of things that s depends on) 
+///        (The set of things that s depends on)
 //
 // For example, suppose DG = {("a", "b"), ("a", "c"), ("b", "d"), ("d", "d")}
 //     dependents("a") = {"b", "c"}
@@ -34,6 +34,7 @@ public class DependencyGraph
 {
     private Dictionary<String, Cell> CellsMap = new Dictionary<string, Cell>();
     private int pair;
+
     private class Cell
     {
         // depend to
@@ -58,7 +59,6 @@ public class DependencyGraph
         pair = 0;
     }
 
-
     /// <summary>
     /// The number of ordered pairs in the DependencyGraph.
     /// This is an example of a property.
@@ -67,7 +67,6 @@ public class DependencyGraph
     {
         get { return pair; }
     }
-
 
     /// <summary>
     /// Returns the size of dependees(s),
@@ -80,7 +79,6 @@ public class DependencyGraph
         return 0;
     }
 
-
     /// <summary>
     /// Reports whether dependents(s) is non-empty.
     /// * return false when s is not in graph, won't throw exception
@@ -90,7 +88,6 @@ public class DependencyGraph
         if (!CellsMap.ContainsKey(s)) { return false; }
         return CellsMap[s].Dependent.Count != 0;
     }
-
 
     /// <summary>
     /// Reports whether dependees(s) is non-empty.
@@ -102,7 +99,6 @@ public class DependencyGraph
         return CellsMap[s].Dependee.Count != 0;
     }
 
-
     /// <summary>
     /// Enumerates dependents(s).
     /// * return empty list when s is not in graph, won't throw exception
@@ -112,7 +108,6 @@ public class DependencyGraph
         if (!CellsMap.ContainsKey(s)) { return Enumerable.Empty<string>(); }
         return CellsMap[s].Dependent;
     }
-
 
     /// <summary>
     /// Enumerates dependees(s).
@@ -124,12 +119,11 @@ public class DependencyGraph
         return CellsMap[s].Dependee;
     }
 
-
     /// <summary>
     /// <para>Adds the ordered pair (s,t), if it doesn't exist</para>
-    /// 
-    /// <para>This should be thought of as:</para>   
-    /// 
+    ///
+    /// <para>This should be thought of as:</para>
+    ///
     ///   t depends on s
     ///
     /// * if (s,t) already exist, do nothing
@@ -168,7 +162,6 @@ public class DependencyGraph
         }
     }
 
-
     /// <summary>
     /// Removes the ordered pair (s,t), if it exists
     /// </summary>
@@ -183,7 +176,6 @@ public class DependencyGraph
             pair--;
         }
     }
-
 
     /// <summary>
     /// Removes all existing ordered pairs of the form (s,r).  Then, for each
@@ -203,9 +195,8 @@ public class DependencyGraph
         }
     }
 
-
     /// <summary>
-    /// Removes all existing ordered pairs of the form (r,s).  Then, for each 
+    /// Removes all existing ordered pairs of the form (r,s).  Then, for each
     /// t in newDependees, adds the ordered pair (t,s).
     /// </summary>
     public void ReplaceDependees(string s, IEnumerable<string> newDependees)

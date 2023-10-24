@@ -242,7 +242,6 @@ public class Spreadsheet : AbstractSpreadsheet
             }
             return new List<string>();
         }
-
         else if (double.TryParse(content, out double number))
         {
             // content is double
@@ -363,7 +362,6 @@ public class Spreadsheet : AbstractSpreadsheet
             value = Cells[name].value;
 
             Cells[name].content = formula;
-
         }
         else { Cells.Add(name, new Cell(formula)); }
 
@@ -448,7 +446,6 @@ public class Spreadsheet : AbstractSpreadsheet
         if (Cells.TryGetValue(ValidName(name), out Cell? cell))
 
             return Cells[ValidName(name)].value;
-
         else
 
             return "";

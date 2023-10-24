@@ -13,15 +13,18 @@ public partial class MainPage : ContentPage
 {
     // save data and calculate
     private Spreadsheet _data;
+
     // default save to this location, with name
     private string FileLocation;
 
     // for auto save method
     private Object sender;
+
     private EventArgs e;
     private bool changed;
 
     private List<string> _sumList;
+
     /// <summary>
     /// Constructor for the demo
     /// </summary>
@@ -115,7 +118,6 @@ public partial class MainPage : ContentPage
         _ = DisplayAlert("Help:",
         "# Cell Operations\r\n\r\n* Inputting Values and Formulas: To input data or a formula, simply double-click on the desired cell or select the input box. You can input numbers, text, or formulas.\r\n\r\n* Auto Calculation: Upon entering a formula within a cell, other relevant cells will automatically perform the calculation.\r\n\r\n* Summation: You can select the cell and press Click to add it to the box, click on the input box and enter. The result of the calculation will be displayed in the pop-up window.\r\n\r\n# File Management\r\n\r\n* Creating a New File: Click the \"New\" button at the top to create a new file.\r\n\r\n* Opening a File: Click on \"Open\" from the \"File\" dropdown menu to select and open an \r\n\r\n# existing file.\r\n\r\n* Saving a File: Click on \"Save\" from the \"File\" dropdown menu to save the current file.\r\n\r\n* Renaming: Click \"Rename\" to give a new name to the current file.\r\n\r\n# Error Alerts\r\n\r\n* Should you input an invalid formula or text, the system will automatically alert you.\r\n\r\n# Clear Operation\r\n\r\n* Clearing Data: Click on the \"clearButton\" at the top to clear the content of the selected cells."
         , "OK");
-
     }
 
     /// <summary>
@@ -167,7 +169,6 @@ public partial class MainPage : ContentPage
         return t.ToString();
     }
 
-
     /// <summary>
     /// help method, mapping variable to address
     /// </summary>
@@ -205,8 +206,6 @@ public partial class MainPage : ContentPage
         _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
-
-
     /// <summary>
     /// Opens any file as text and prints its contents.
     /// Note the use of async and await, concepts we will learn more about
@@ -225,7 +224,6 @@ public partial class MainPage : ContentPage
         {
             FileResult fileResult = await FilePicker.Default.PickAsync();
 
-
             if (fileResult != null)
             {
                 Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
@@ -233,7 +231,7 @@ public partial class MainPage : ContentPage
                 // for windows, replace Console.WriteLine statements with:
                 //System.Diagnostics.Debug.WriteLine( ... );
 
-                // remove exist data, upload _data, sync SpreadsheetGrid._values 
+                // remove exist data, upload _data, sync SpreadsheetGrid._values
                 spreadsheetGrid.Clear();
                 cellContent.Text = "";
                 cellValue.Text = "";
@@ -288,21 +286,16 @@ public partial class MainPage : ContentPage
             var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonFile));
             var path = await FileSaver.SaveAsync(fileName.Text, stream, c.Token);
         }
-
-
-
         catch (Exception ex)
         {
             Debug.WriteLine("Error with file:");
 
             Debug.WriteLine(ex.Message);
-
         }
-
     }
+
     private void SumComplete(Object sender, EventArgs e)
     {
-
         spreadsheetGrid.GetSelection(out int col, out int row);
 
         string target = AddrToVar(col, row);
@@ -314,11 +307,10 @@ public partial class MainPage : ContentPage
         string result = string.Join(", ", _sumList);
 
         Sum.Text = result;
-
     }
+
     private void sumSum(Object sender, EventArgs e)
     {
-
         double sum = 0;
 
         string result = string.Join(", ", _sumList);
@@ -337,22 +329,14 @@ public partial class MainPage : ContentPage
         }
         catch (Exception)
         {
-
             DisplayAlert("Error", "Please Check the input", "OK");
         }
     }
 
     private void clearButtom(Object sender, EventArgs e)
     {
-
         _sumList.Clear();
         string result = string.Join(", ", _sumList);
         Sum.Text = result;
-
     }
-
-
-
-
-
 }

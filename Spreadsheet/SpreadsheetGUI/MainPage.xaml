@@ -11,16 +11,16 @@
             <MenuFlyoutItem Text="Rename" Clicked="RenameClicked" />
             <MenuFlyoutItem Text="Help!" Clicked="HelpClicked" />
         </MenuBarItem>
-        <MenuBarItem Text="Unsaved" 
-                     x:Name="status"/>
+        <MenuBarItem Text="Unsaved"
+                     x:Name="status" />
         <MenuBarItem Text="New File.sprd"
-                     x:Name="fileName"/>
+                     x:Name="fileName" />
     </ContentPage.MenuBarItems>
 
     <Grid RowDefinitions="48,*">
         <HorizontalStackLayout BackgroundColor="Gainsboro"
                                Grid.Row="0">
-            <!--cell name-->
+            <!--name-->
             <Entry x:Name="cellName"
                    Text=""
                    TextColor="Black"
@@ -28,9 +28,9 @@
                    Placeholder="Name"
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
-                   Margin="5"/>
+                   Margin="5" />
 
-            <!--cell value-->
+            <!--value-->
             <Entry x:Name="cellValue"
                    Text=""
                    TextColor="Black"
@@ -38,58 +38,54 @@
                    Placeholder="Value"
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
-                   Margin="5"/>
+                   Margin="5" />
 
-            <!--cell content-->
+            <!--content-->
             <Entry x:Name="cellContent"
                    Text=""
                    TextColor="Black"
                    Completed="finishInput"
-                   
+
                    TextChanged="ChangeUpdate"
                    ToolTipProperties.Text="Content"
                    Placeholder="Content"
                    BackgroundColor="WhiteSmoke"
                    Margin="5"
-                   WidthRequest="150"/>
+                   WidthRequest="150" />
+
+            <!--Sum function-->
             <Button
                   x:Name="sun"
-                    Text="add"               
+                    Text="add"
                     Margin="5"
                     FontSize="Subtitle"
                     Clicked="SumComplete"
                     BackgroundColor="DarkGray"
-                    WidthRequest="80"/>
+                    WidthRequest="80" />
 
             <Entry x:Name="Sum"
                     Text=""
                     TextColor="Black"
                     Completed="sumSum"
-                   
+
                     ToolTipProperties.Text="chose then Enter!"
                     Placeholder="Sum"
                     BackgroundColor="WhiteSmoke"
                     Margin="5"
                     IsReadOnly="True"
-                    WidthRequest="150"/>
+                    WidthRequest="150" />
 
-            <Button
-                x:Name="clear"
-                FontSize="Small"
-                BackgroundColor="DarkGray"
-                Text="Clear"               
-                Margin="5"
-                Clicked="clearButtom"
-                WidthRequest="80"/>
-
-
-
+            <Button x:Name="clear"
+                    FontSize="Small"
+                    BackgroundColor="DarkGray"
+                    Text="Clear"
+                    Margin="5"
+                    Clicked="clearButtom"
+                    WidthRequest="80" />
         </HorizontalStackLayout>
 
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
- 
-                            Grid.Row="1"/>
 
+                            Grid.Row="1" />
     </Grid>
 </ContentPage>
-
