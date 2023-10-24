@@ -1,4 +1,9 @@
-﻿using CommunityToolkit.Maui.Storage;
+﻿// edit from Travis Martin edition
+// write by Zelin Yi, Rishen Cao for CS 3500
+// Last updated: October 2023
+
+using CommunityToolkit.Maui.Storage;
+using Microsoft.Maui.Storage;
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
@@ -14,15 +19,12 @@ public partial class MainPage : ContentPage
     // save data and calculate
     private Spreadsheet _data;
 
-    // default save to this location, with name
-    private string FileLocation;
-
     // for auto save method
     private Object sender;
-
     private EventArgs e;
     private bool changed;
 
+    // for sum feature
     private List<string> _sumList;
 
     /// <summary>
@@ -113,7 +115,12 @@ public partial class MainPage : ContentPage
         return t.ToString();
     }
 
-    public void HelpClicked(Object sender, EventArgs e)
+    /// <summary>
+    /// alart to show help method
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void HelpClicked(Object sender, EventArgs e)
     {
         _ = DisplayAlert("Help:",
         "# Cell Operations\r\n\r\n* Inputting Values and Formulas: To input data or a formula, simply double-click on the desired cell or select the input box. You can input numbers, text, or formulas.\r\n\r\n* Auto Calculation: Upon entering a formula within a cell, other relevant cells will automatically perform the calculation.\r\n\r\n* Summation: You can select the cell and press Click to add it to the box, click on the input box and enter. The result of the calculation will be displayed in the pop-up window.\r\n\r\n# File Management\r\n\r\n* Creating a New File: Click the \"New\" button at the top to create a new file.\r\n\r\n* Opening a File: Click on \"Open\" from the \"File\" dropdown menu to select and open an \r\n\r\n# existing file.\r\n\r\n* Saving a File: Click on \"Save\" from the \"File\" dropdown menu to save the current file.\r\n\r\n* Renaming: Click \"Rename\" to give a new name to the current file.\r\n\r\n# Error Alerts\r\n\r\n* Should you input an invalid formula or text, the system will automatically alert you.\r\n\r\n# Clear Operation\r\n\r\n* Clearing Data: Click on the \"clearButton\" at the top to clear the content of the selected cells."
@@ -158,6 +165,12 @@ public partial class MainPage : ContentPage
         }
     }
 
+    /// <summary>
+    /// help method
+    /// get formal cell value to avoid super long error message
+    /// </summary>
+    /// <param name="variable"></param>
+    /// <returns></returns>
     private string FormalCellValue(string variable)
     {
         object t = _data.GetCellValue(variable);
@@ -247,7 +260,6 @@ public partial class MainPage : ContentPage
                     else
                         spreadsheetGrid.SetValue(col, row, tempValue.ToString());
                 }
-                FileLocation = PathWithOutName(fileResult.FullPath);
                 fileName.Text = fileResult.FileName;
                 status.Text = "Saved";
             }
@@ -263,18 +275,26 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private string PathWithOutName(string s)
-    {
-        int index = s.LastIndexOf('\\');
-        return s.Remove(index);
-    }
-
+    /// <summary>
+    /// rename file
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private async void RenameClicked(Object sender, EventArgs e)
     {
-        fileName.Text = await DisplayPromptAsync("Rename", "Enter new name");
-        fileName.Text = fileName.Text + ".sprd";
+        string t = await DisplayPromptAsync("Rename", "Enter new name");
+        t = t.Trim();
+        if (t.Length >= 5 && t.Substring(t.Length - 4) != ".sprd")
+            fileName.Text = t;
+        else
+            fileName.Text = t + ".sprd";
     }
 
+    /// <summary>
+    /// save file function
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private async void SaveClicked(Object sender, EventArgs e)
     {
         CancellationTokenSource c = new CancellationTokenSource();
@@ -294,6 +314,11 @@ public partial class MainPage : ContentPage
         }
     }
 
+    /// <summary>
+    /// use to add element into sum list
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void SumComplete(Object sender, EventArgs e)
     {
         spreadsheetGrid.GetSelection(out int col, out int row);
@@ -309,6 +334,11 @@ public partial class MainPage : ContentPage
         Sum.Text = result;
     }
 
+    /// <summary>
+    /// use to calculate sum of all element in sum list
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void sumSum(Object sender, EventArgs e)
     {
         double sum = 0;
@@ -333,6 +363,11 @@ public partial class MainPage : ContentPage
         }
     }
 
+    /// <summary>
+    /// clear entire table
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void clearButtom(Object sender, EventArgs e)
     {
         _sumList.Clear();

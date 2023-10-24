@@ -54,9 +54,7 @@
                    WidthRequest="150" />
 
             <!--Sum function-->
-            <Button
-                  x:Name="sun"
-                    Text="add"
+            <Button Text="add"
                     Margin="5"
                     FontSize="Subtitle"
                     Clicked="SumComplete"
