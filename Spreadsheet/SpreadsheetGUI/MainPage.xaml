@@ -13,7 +13,7 @@
         </MenuBarItem>
         <MenuBarItem Text="Unsaved" 
                      x:Name="status"/>
-        <MenuBarItem Text="New File.sprd" 
+        <MenuBarItem Text="New File.sprd"
                      x:Name="fileName"/>
     </ContentPage.MenuBarItems>
 
@@ -52,29 +52,35 @@
                    BackgroundColor="WhiteSmoke"
                    Margin="5"
                    WidthRequest="150"/>
+            <Button
+                  x:Name="sun"
+                    Text="add"               
+                    Margin="5"
+                    FontSize="Subtitle"
+                    Clicked="SumComplete"
+                    BackgroundColor="DarkGray"
+                    WidthRequest="80"/>
+
             <Entry x:Name="Sum"
                     Text=""
                     TextColor="Black"
-                    Completed="SumComplete"
+                    Completed="sumSum"
                    
-                    ToolTipProperties.Text="sum"
+                    ToolTipProperties.Text="chose then Enter!"
                     Placeholder="Sum"
                     BackgroundColor="WhiteSmoke"
                     Margin="5"
+                    IsReadOnly="True"
                     WidthRequest="150"/>
 
             <Button
-                  x:Name="sun"
-                    Text="sum"               
-                    Margin="5"
-                    Clicked="sumSum"
-                    WidthRequest="150"/>
-            <Button
-            x:Name="clear"
-            Text="clearButtom"               
-            Margin="5"
-            Clicked="clearButtom"
-            WidthRequest="150"/>
+                x:Name="clear"
+                FontSize="Small"
+                BackgroundColor="DarkGray"
+                Text="Clear"               
+                Margin="5"
+                Clicked="clearButtom"
+                WidthRequest="80"/>
 
 
 

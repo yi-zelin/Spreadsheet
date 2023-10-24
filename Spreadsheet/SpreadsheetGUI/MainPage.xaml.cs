@@ -1,14 +1,8 @@
 ﻿using CommunityToolkit.Maui.Storage;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Storage;
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Xml.Linq;
 
 namespace SpreadsheetGUI;
 
@@ -118,7 +112,10 @@ public partial class MainPage : ContentPage
 
     public void HelpClicked(Object sender, EventArgs e)
     {
-        _ = DisplayAlert("Help:", "", "OK");
+        _ = DisplayAlert("Help:",
+        "# Cell Operations\r\n\r\n* Inputting Values and Formulas: To input data or a formula, simply double-click on the desired cell or select the input box. You can input numbers, text, or formulas.\r\n\r\n* Auto Calculation: Upon entering a formula within a cell, other relevant cells will automatically perform the calculation.\r\n\r\n* Summation: You can select the cell and press Click to add it to the box, click on the input box and enter. The result of the calculation will be displayed in the pop-up window.\r\n\r\n# File Management\r\n\r\n* Creating a New File: Click the \"New\" button at the top to create a new file.\r\n\r\n* Opening a File: Click on \"Open\" from the \"File\" dropdown menu to select and open an \r\n\r\n# existing file.\r\n\r\n* Saving a File: Click on \"Save\" from the \"File\" dropdown menu to save the current file.\r\n\r\n* Renaming: Click \"Rename\" to give a new name to the current file.\r\n\r\n# Error Alerts\r\n\r\n* Should you input an invalid formula or text, the system will automatically alert you.\r\n\r\n# Clear Operation\r\n\r\n* Clearing Data: Click on the \"clearButton\" at the top to clear the content of the selected cells."
+        , "OK");
+
     }
 
     /// <summary>
@@ -150,9 +147,12 @@ public partial class MainPage : ContentPage
                 status.Text = "Unsaved";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            _ = DisplayAlert("Circular Error", "there exist an circular error for your input, this change won't make any effect, try another value", "OK");
+            if (ex is CircularException)
+                _ = DisplayAlert("Circular Error", "there exist an circular error for your input, this change won't make any effect, try another value", "OK");
+            else
+                _ = DisplayAlert("Formula Format Error", "there exist an formula format error, this change won't make any effect, try another value", "OK");
         }
     }
 
@@ -287,8 +287,6 @@ public partial class MainPage : ContentPage
             string jsonFile = File.ReadAllText(filePath);
             var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonFile));
             var path = await FileSaver.SaveAsync(fileName.Text, stream, c.Token);
-
-
         }
 
 
