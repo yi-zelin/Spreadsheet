@@ -1,9 +1,14 @@
 ﻿using CommunityToolkit.Maui.Storage;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
 using SpreadsheetUtilities;
 using SS;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace SpreadsheetGUI;
 
@@ -14,12 +19,15 @@ public partial class MainPage : ContentPage
 {
     // save data and calculate
     private Spreadsheet _data;
+    // default save to this location, with name
+    private string FileLocation;
 
     // for auto save method
     private Object sender;
     private EventArgs e;
     private bool changed;
 
+    private List<string> _sumList;
     /// <summary>
     /// Constructor for the demo
     /// </summary>
@@ -32,10 +40,38 @@ public partial class MainPage : ContentPage
         // delegate that specifies that all methods that register with it must
         // take a SpreadsheetGrid as its parameter and return nothing.  So we
         // register the displaySelection method below.
+        spreadsheetGrid.SelectionChanged += SelectionChangedDriver;
         spreadsheetGrid.SelectionChanged += displaySelection;
+
         spreadsheetGrid.SetSelection(2, 3);
         cellName.Text = AddrToVar(2, 3);
         _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
+    }
+
+    /// <summary>
+    /// help method to keep update event, thus we can do update when we want to
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void ChangeUpdate(Object sender, EventArgs e)
+    {
+        this.sender = sender;
+        this.e = e;
+        changed = true;
+    }
+
+    /// <summary>
+    /// help method, to drive function we want to at selection changed
+    /// </summary>
+    /// <param name="grid"></param>
+    private void SelectionChangedDriver(ISpreadsheetGrid grid)
+    {
+        // auto evaluate function
+        if (changed)
+        {
+            finishInput(sender, e);
+            changed = false;
+        }
     }
 
     /// <summary>
@@ -47,22 +83,42 @@ public partial class MainPage : ContentPage
         spreadsheetGrid.GetSelection(out int col, out int row);
         spreadsheetGrid.GetValue(col, row, out string value);
         cellName.Text = AddrToVar(col, row);
-        cellValue.Text = value;
 
         // update error message detail
         object t = _data.GetCellValue(AddrToVar(col, row));
         if (t is FormulaError)
         {
+            cellValue.Text = "Error!";
             ToolTipProperties.SetText(cellValue, "#Error: " + ((FormulaError)t).Reason);
-        } else
+        }
+        else
         {
+            cellValue.Text = t.ToString();
             ToolTipProperties.SetText(cellValue, "Value");
         }
 
-        // use cell.StringForm as content in excel
+        // set content
         if (!_data.Cells.TryGetValue(AddrToVar(col, row), out Spreadsheet.Cell cell))
             cellContent.Text = "";
-        else cellContent.Text = cell.StringForm;
+        else cellContent.Text = GetContentText(AddrToVar(col, row));
+    }
+
+    /// <summary>
+    /// a help method to output correct form of content
+    /// </summary>
+    /// <param name="s"></param>
+    /// <returns></returns>
+    private string GetContentText(string s)
+    {
+        object t = _data.GetCellContents(s);
+        if (t is Formula)
+            return "=" + t.ToString();
+        return t.ToString();
+    }
+
+    public void HelpClicked(Object sender, EventArgs e)
+    {
+        _ = DisplayAlert("Help:", "", "OK");
     }
 
     /// <summary>
@@ -70,9 +126,9 @@ public partial class MainPage : ContentPage
     /// </summary>
     public void finishInput(Object sender, EventArgs e)
     {
+        changed = false;
         try
         {
-            cellContent.Text = cellContent.Text.ToUpper();
             // add into _data, spreadsheet will auto calculate result
             IList<string> updatelist = _data.SetContentsOfCell(cellName.Text, cellContent.Text);
             // update change
@@ -93,34 +149,11 @@ public partial class MainPage : ContentPage
             {
                 status.Text = "Unsaved";
             }
-            else
-            {
-                status.Text = "Saved";
-            }
         }
-        catch (CircularException)
+        catch
         {
-            spreadsheetGrid.GetSelection(out int col1, out int row1);
-            spreadsheetGrid.SetValue(col1, row1, "#Error");
-
-            ToolTipProperties.SetText(cellValue, "#Error: circlar error ");
+            _ = DisplayAlert("Circular Error", "there exist an circular error for your input, this change won't make any effect, try another value", "OK");
         }
-        catch (ArgumentException)
-        {
-            spreadsheetGrid.GetSelection(out int col1, out int row1);
-            spreadsheetGrid.SetValue(col1, row1, "0");
-            _data.SetContentsOfCell(cellName.Text, "0");
-            ToolTipProperties.SetText(cellValue, "#Error: check in put value ");
-        }
-        catch (FormulaFormatException)
-        {
-            spreadsheetGrid.GetSelection(out int col1, out int row1);
-            spreadsheetGrid.SetValue(col1, row1, "#Error");
-            ToolTipProperties.SetText(cellValue, "#Error: Formula format error ");
-        }
-
-
-
     }
 
     private string FormalCellValue(string variable)
@@ -172,6 +205,8 @@ public partial class MainPage : ContentPage
         _data = new Spreadsheet(s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
     }
 
+
+
     /// <summary>
     /// Opens any file as text and prints its contents.
     /// Note the use of async and await, concepts we will learn more about
@@ -181,15 +216,16 @@ public partial class MainPage : ContentPage
     {
         if (status.Text == "Unsaved")
         {
-           
-            bool result =await DisplayAlert("Selection:", "Unsaved Yet!", accept:"save",cancel:" OK");
-
-
+            if (!(await DisplayAlert("Selection:", "Unsaved Yet!", accept: "Continue", cancel: "Cancel")))
+            {
+                return;
+            }
         }
         try
         {
             FileResult fileResult = await FilePicker.Default.PickAsync();
-          
+
+
             if (fileResult != null)
             {
                 Debug.WriteLine("Successfully chose file: " + fileResult.FileName);
@@ -203,7 +239,7 @@ public partial class MainPage : ContentPage
                 cellValue.Text = "";
                 ToolTipProperties.SetText(cellValue, "Value");
                 _data = new Spreadsheet(fileResult.FullPath, s => Regex.IsMatch(s, @"^[a-zA-Z][0-9][0-9]?$"), s => s.ToUpper(), "ps6");
-         
+
                 foreach (string key in _data.Cells.Keys)
                 {
                     VarToAddr(key, out int col, out int row);
@@ -213,6 +249,7 @@ public partial class MainPage : ContentPage
                     else
                         spreadsheetGrid.SetValue(col, row, tempValue.ToString());
                 }
+                FileLocation = PathWithOutName(fileResult.FullPath);
                 fileName.Text = fileResult.FileName;
                 status.Text = "Saved";
             }
@@ -223,38 +260,100 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            _=DisplayAlert("Error", "Error opening file", "OK");
             Debug.WriteLine("Error opening file:");
             Debug.WriteLine(ex.Message);
         }
     }
 
-    private async void RenameClicked(Object sender, EventArgs e) 
+    private string PathWithOutName(string s)
+    {
+        int index = s.LastIndexOf('\\');
+        return s.Remove(index);
+    }
+
+    private async void RenameClicked(Object sender, EventArgs e)
     {
         fileName.Text = await DisplayPromptAsync("Rename", "Enter new name");
         fileName.Text = fileName.Text + ".sprd";
     }
 
-        Sum.Text = result;
+    private async void SaveClicked(Object sender, EventArgs e)
+    {
+        CancellationTokenSource c = new CancellationTokenSource();
         try
         {
-            CancellationTokenSource c = new CancellationTokenSource();
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName.Text);
             _data.Save(filePath);
             string jsonFile = File.ReadAllText(filePath);
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonFile));
+            var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonFile));
             var path = await FileSaver.SaveAsync(fileName.Text, stream, c.Token);
-            status.Text = "Saved";
-            _ = DisplayAlert("Saved", "File saved under folder: " + PathWithOutName(filePath) , "OK");
+
+
         }
+
+
+
         catch (Exception ex)
         {
             Debug.WriteLine("Error with file:");
+
             Debug.WriteLine(ex.Message);
+
+        }
+
+    }
+    private void SumComplete(Object sender, EventArgs e)
+    {
+
+        spreadsheetGrid.GetSelection(out int col, out int row);
+
+        string target = AddrToVar(col, row);
+
+        displaySelection(spreadsheetGrid);
+
+        _sumList.Add(cellName.Text);
+
+        string result = string.Join(", ", _sumList);
+
+        Sum.Text = result;
+
+    }
+    private void sumSum(Object sender, EventArgs e)
+    {
+
+        double sum = 0;
+
+        string result = string.Join(", ", _sumList);
+
+        Sum.Text = result;
+        try
+        {
+            foreach (var item in _sumList)
+            {
+                sum += (double)_data.GetCellValue(item);
+            }
+
+            DisplayAlert("Total", result + " = " + sum, "ok");
+
+            _sumList.Clear();
+        }
+        catch (Exception)
+        {
+
+            DisplayAlert("Error", "Please Check the input", "OK");
         }
     }
 
-  
+    private void clearButtom(Object sender, EventArgs e)
+    {
+
+        _sumList.Clear();
+        string result = string.Join(", ", _sumList);
+        Sum.Text = result;
+
+    }
+
+
 
 
 

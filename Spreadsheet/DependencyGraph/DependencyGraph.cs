@@ -142,7 +142,10 @@ public class DependencyGraph
         if (!CellsMap.ContainsKey(s) && !CellsMap.ContainsKey(t))
         {
             CellsMap.Add(s, new Cell());
-            CellsMap.Add(t, new Cell());
+            if (s != t)
+            {
+                CellsMap.Add(t, new Cell());
+            }
         }
         // s not in the dictionary, but t is in dictionary
         else if (!CellsMap.ContainsKey(s) && CellsMap.ContainsKey(t))

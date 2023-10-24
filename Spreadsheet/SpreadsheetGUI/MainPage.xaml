@@ -8,6 +8,8 @@
             <MenuFlyoutItem Text="New" Clicked="NewClicked" />
             <MenuFlyoutItem Text="Open" Clicked="OpenClicked" />
             <MenuFlyoutItem Text="Save" Clicked="SaveClicked" />
+            <MenuFlyoutItem Text="Rename" Clicked="RenameClicked" />
+            <MenuFlyoutItem Text="Help!" Clicked="HelpClicked" />
         </MenuBarItem>
         <MenuBarItem Text="Unsaved" 
                      x:Name="status"/>
@@ -15,20 +17,7 @@
                      x:Name="fileName"/>
     </ContentPage.MenuBarItems>
 
-    <Grid RowDefinitions="48,*, 32">
-        <HorizontalStackLayout BackgroundColor="Gainsboro"
-                   Grid.Row="3">
-            <!-- Your Content -->
-            <Entry x:Name="cellNsame"
-       Text=""
-       TextColor="Black"
-       ToolTipProperties.Text="Namse"
-       Placeholder="Name"
-       BackgroundColor="WhiteSmoke"
-       IsReadOnly="True"
-       Margin="5"/>
-
-        </HorizontalStackLayout>
+    <Grid RowDefinitions="48,*">
         <HorizontalStackLayout BackgroundColor="Gainsboro"
                                Grid.Row="0">
             <!--cell name-->
@@ -40,7 +29,7 @@
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
                    Margin="5"/>
-            
+
             <!--cell value-->
             <Entry x:Name="cellValue"
                    Text=""
@@ -50,13 +39,14 @@
                    BackgroundColor="WhiteSmoke"
                    IsReadOnly="True"
                    Margin="5"/>
-            
+
             <!--cell content-->
             <Entry x:Name="cellContent"
                    Text=""
                    TextColor="Black"
                    Completed="finishInput"
                    
+                   TextChanged="ChangeUpdate"
                    ToolTipProperties.Text="Content"
                    Placeholder="Content"
                    BackgroundColor="WhiteSmoke"
@@ -68,11 +58,11 @@
                     Completed="SumComplete"
                    
                     ToolTipProperties.Text="sum"
-                    Placeholder="Content"
+                    Placeholder="Sum"
                     BackgroundColor="WhiteSmoke"
                     Margin="5"
                     WidthRequest="150"/>
-                    
+
             <Button
                   x:Name="sun"
                     Text="sum"               
@@ -93,7 +83,7 @@
         <SS:SpreadsheetGrid x:Name="spreadsheetGrid"
  
                             Grid.Row="1"/>
-        
+
     </Grid>
 </ContentPage>
 
